@@ -762,7 +762,7 @@ impl PP8085 {
         let num = self.B;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -783,7 +783,7 @@ impl PP8085 {
         let num = self.C;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -804,7 +804,7 @@ impl PP8085 {
         let num = self.D;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -825,7 +825,7 @@ impl PP8085 {
         let num = self.E;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -846,7 +846,7 @@ impl PP8085 {
         let num = self.H;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -867,7 +867,7 @@ impl PP8085 {
         let num = self.L;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -888,7 +888,7 @@ impl PP8085 {
         let num = self.A;
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -911,7 +911,7 @@ impl PP8085 {
         }
         self.set_sign((num | 1<<7) != 0);
         self.set_overflow(num == 0xff);
-        self.set_zero(num == 0xff);
+        self.set_zero(num == 0x00);
         if num != 0xff {
             self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
@@ -919,5 +919,277 @@ impl PP8085 {
         }
         self.set_parity(PP8085::find_parity(num));
         10
+    }
+
+    /// ADD B
+    fn add_b(&mut self) -> u8 {
+        let num = self.B;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC B
+    fn adc_b(&mut self) -> u8 {
+        let num = self.B + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD C
+    fn add_c(&mut self) -> u8 {
+        let num = self.C;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC C
+    fn adc_c(&mut self) -> u8 {
+        let num = self.C + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD D
+    fn add_d(&mut self) -> u8 {
+        let num = self.D;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC D
+    fn adc_d(&mut self) -> u8 {
+        let num = self.D + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD E
+    fn add_e(&mut self) -> u8 {
+        let num = self.E;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC E
+    fn adc_e(&mut self) -> u8 {
+        let num = self.E + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD H
+    fn add_h(&mut self) -> u8 {
+        let num = self.H;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC H
+    fn adc_h(&mut self) -> u8 {
+        let num = self.H + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD L
+    fn add_l(&mut self) -> u8 {
+        let num = self.L;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC L
+    fn adc_l(&mut self) -> u8 {
+        let num = self.L + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD A
+    fn add_a(&mut self) -> u8 {
+        let num = self.A;
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADC A
+    fn adc_a(&mut self) -> u8 {
+        let num = self.A + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        4
+    }
+
+    /// ADD M
+    fn add_m(&mut self) -> u8 {
+        let num = self.memory.read(self.get_addr_hl());
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    /// ADC M
+    fn adc_m(&mut self) -> u8 {
+        let num = self.memory.read(self.get_addr_hl()) + (self.F & 1);
+        self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
+        self.set_carry(0xff - self.A < num);
+        if 0xff - self.A > num {
+            self.A += num; 
+        } else {
+            self.A = num - (0xff - self.A);
+            self.set_overflow(true);
+        }
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
     }
 }
