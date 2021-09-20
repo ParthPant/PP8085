@@ -107,6 +107,30 @@ macro_rules! sbb_r {
     }
 }
 
+macro_rules! ana_r {
+    ($fn_name: ident, $r: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            self.A &= self.$r;
+            self.set_sign((self.A | 1<<7) != 0);
+            self.set_zero(self.A == 0x00);
+            self.set_parity(PP8085::find_parity(self.A));
+            4
+        }
+    }
+}
+
+macro_rules! xra_r {
+    ($fn_name: ident, $r: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            self.A ^= self.$r;
+            self.set_sign((self.A | 1<<7) != 0);
+            self.set_zero(self.A == 0x00);
+            self.set_parity(PP8085::find_parity(self.A));
+            4
+        }
+    }
+}
+
 #[allow(non_snake_case)]
 pub struct PP8085 {
     IR:u8, // Instruction Register
@@ -1268,6 +1292,22 @@ impl PP8085 {
         7
     }
 
+    ana_r! (ana_a, A);
+    ana_r! (ana_b, B);
+    ana_r! (ana_c, C);
+    ana_r! (ana_d, D);
+    ana_r! (ana_e, E);
+    ana_r! (ana_h, H);
+    ana_r! (ana_l, L);
+
+    xra_r! (xra_a, A);
+    xra_r! (xra_b, B);
+    xra_r! (xra_c, C);
+    xra_r! (xra_d, D);
+    xra_r! (xra_e, E);
+    xra_r! (xra_h, H);
+    xra_r! (xra_l, L);
+
     /// JMP XXXX
     fn jmp(&mut self) -> u8 {
         let (opl, oph) = self.read_16bits();
@@ -1359,6 +1399,24 @@ impl PP8085 {
     fn pchl(&mut self) -> u8 {
         self.PC = self.get_addr_hl();
         6
+    }
+
+    /// CMA
+    fn cma(&mut self) -> u8 {
+        self.A = !self.A;
+        4
+    }
+
+    /// STC
+    fn stc(&mut self) -> u8 {
+        self.set_carry(true);
+        4
+    }
+
+    /// CMC
+    fn cmc(&mut self) -> u8 {
+        self.set_carry(!self.get_carry());
+        4
     }
 }
 
@@ -1507,5 +1565,23 @@ mod tests {
         assert_eq!(cpu.B, 0x2a);
         cpu.mov_d_b();
         assert_eq!(cpu.D, 0x2a);
+    }
+
+    #[test]
+    fn test_ana_r() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b01011100;
+        cpu.B = 0b00001000;
+        cpu.ana_b();
+        assert_eq!(cpu.A, 0b00001000);
+    }
+
+    #[test]
+    fn test_xra_r() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b01011100;
+        cpu.B = 0b00001000;
+        cpu.xra_b();
+        assert_eq!(cpu.A, 0b01010100);
     }
 }
