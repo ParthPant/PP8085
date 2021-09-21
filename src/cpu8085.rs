@@ -165,14 +165,27 @@ macro_rules! cmp_r {
     };
 }
 
+macro_rules! rst_seq {
+    ($fn_name: ident, $i: expr) => {
+        fn $fn_name (&mut self) -> u8 {
+            self.SP -= 1;
+            self.memory.write(self.SP, (self.PC >> 8) as u8);
+            self.SP -= 1;
+            self.memory.write(self.SP, (self.PC & 0x0f) as u8);
+            self.PC = $i as u16;
+            12 
+        }
+    };
+}
+
 macro_rules! call_seq {
     ($fn_name: ident) => {
         fn $fn_name (&mut self) -> u8 {
+            let (opl, oph) = self.read_16bits(); 
             self.SP -= 1;
-            self.memory.write(self.SP, ((self.PC & 0xf0) >> 8) as u8);
+            self.memory.write(self.SP, (self.PC >> 8) as u8);
             self.SP -= 1;
             self.memory.write(self.SP, (self.PC & 0x0f) as u8);
-            let (opl, oph) = self.read_16bits(); 
             self.PC = ((oph as u16) << 8) | (opl as u16);
             18
         }
@@ -183,7 +196,7 @@ macro_rules! call_seq {
             let (opl, oph) = self.read_16bits(); 
             if self.$cond() {
                 self.SP -= 1;
-                self.memory.write(self.SP, ((self.PC & 0xf0) >> 8) as u8);
+                self.memory.write(self.SP, (self.PC >> 8) as u8);
                 self.SP -= 1;
                 self.memory.write(self.SP, (self.PC & 0x0f) as u8);
                 self.PC = ((oph as u16) << 8) | (opl as u16);
@@ -196,7 +209,7 @@ macro_rules! call_seq {
             let (opl, oph) = self.read_16bits(); 
             if !self.$cond() {
                 self.SP -= 1;
-                self.memory.write(self.SP, ((self.PC & 0xf0) >> 8) as u8);
+                self.memory.write(self.SP, (self.PC >> 8) as u8);
                 self.SP -= 1;
                 self.memory.write(self.SP, (self.PC & 0x0f) as u8);
                 self.PC = ((oph as u16) << 8) | (opl as u16);
@@ -1747,6 +1760,15 @@ impl PP8085 {
         4
     }
 
+    rst_seq!(rst_0, 0x0000);
+    rst_seq!(rst_1, 0x0008);
+    rst_seq!(rst_2, 0x0010);
+    rst_seq!(rst_3, 0x0018);
+    rst_seq!(rst_4, 0x0020);
+    rst_seq!(rst_5, 0x0028);
+    rst_seq!(rst_6, 0x0030);
+    rst_seq!(rst_7, 0x0038);
+
     call_seq!(call);
     call_seq!(cc, cnc, get_carry);
     call_seq!(cz, cnz, get_zero);
@@ -2030,6 +2052,19 @@ mod tests {
         assert!(cpu.get_carry());
     }
 
+
+    #[test]
+    fn test_rst() {
+        let mut cpu = PP8085::new();
+        cpu.SP = 0x19ff;
+        cpu.PC = 0x0102;
+        let c = cpu.rst_1();
+        assert_eq!(c, 12);
+        assert_eq!(cpu.PC, 0x0008);
+        assert_eq!(cpu.memory.read(cpu.SP), 0x02);
+        assert_eq!(cpu.memory.read(cpu.SP+1), 0x01);
+    }
+
     #[test]
     fn test_cond_call() {
         let mut cpu = PP8085::new();
@@ -2100,14 +2135,14 @@ mod tests {
     fn test_cond_ret_fn2() {
         let mut cpu = PP8085::new();
         cpu.set_carry(false);
-        cpu.SP = 0x19fd;
+        cpu.SP = 0x2000-2;
         cpu.PC = 0x0000;
         cpu.memory.write(cpu.SP, 0x02);
-        cpu.memory.write(cpu.SP+1, 0xaa);
+        cpu.memory.write(cpu.SP+1, 0x12);
         let c = cpu.rnc();
         assert_eq!(c, 12);
-        assert_eq!(cpu.PC, 0xaa02);
-        assert_eq!(cpu.SP, 0x19ff);
+        assert_eq!(cpu.PC, 0x1202);
+        assert_eq!(cpu.SP, 0x2000);
 
         cpu.set_carry(true);
         cpu.SP = 0x19fd;
