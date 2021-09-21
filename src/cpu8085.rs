@@ -1,4 +1,6 @@
 use super::memory::Memory;
+use super::ioport::IoPort;
+use std::collections::HashMap;
 
 macro_rules!  mov_rd_rs {
     ($fn_name: ident, $dest: ident, $source: ident) => {
@@ -317,6 +319,8 @@ pub struct PP8085 {
     SP:u16,// Stack Pointer
 
     memory: Box<Memory>,
+    io_ports: HashMap<u8, Box<IoPort>>,
+
     cycles: u32,
     IE: bool, // Interrupt enable
     HLT: bool // indicates hlt state
@@ -342,8 +346,9 @@ impl PP8085 {
             SP:0, // Stack Pointer
 
             memory: Box::new(Memory::new(8192)),
-            cycles: 0,
+            io_ports: HashMap::new(),
 
+            cycles: 0,
             IE: false,
             HLT: false,
         }
@@ -371,6 +376,27 @@ impl PP8085 {
         println!("PC: {:#04x}", self.PC);
         println!("SP: {:#04x}", self.SP);
         println!("-----------------------------");
+    }
+
+    pub fn add_io_port(&mut self, addr: u8) {
+        self.io_ports.insert(addr, Box::new(IoPort::new(addr)));
+    }
+
+    pub fn remove_io_port(&mut self, addr: u8) {
+        self.io_ports.remove(&addr);
+    }
+
+    fn read_io(&mut self, addr: u8) -> u8 {
+        match self.io_ports.get(&addr) {
+            Some(d) => d.read(),
+            None => 0,
+        }
+    }
+
+    fn write_io(&mut self, addr: u8, data: u8) {
+        if let Some(port) = self.io_ports.get_mut(&addr) {
+            port.write(data);
+        };
     }
 
     fn write_memory(&mut self, addr: u16, content: u8) {
@@ -1788,6 +1814,20 @@ impl PP8085 {
     ret_seq!(rc, rnc, get_carry);
     ret_seq!(rm, rp, get_sign);
     ret_seq!(rpe, rpo, get_parity);
+
+    // IN
+    fn i_n(&mut self) -> u8 {
+        let addr = self.read_8bits();
+        self.A = self.read_io(addr);
+        10
+    }
+
+    // OUT 
+    fn out(&mut self) -> u8 {
+        let addr = self.read_8bits();
+        self.write_io(addr, self.A);
+        10
+    }
 }
 
 // -----------------------TESTS----------------------------------
@@ -2180,5 +2220,39 @@ mod tests {
         cpu.dad_b();
         assert_eq!(cpu.get_addr_hl(), 0x0001);
         assert!(cpu.get_carry());
+    }
+
+    #[test]
+    fn test_io_connections() {
+        let mut cpu = PP8085::new();
+        cpu.add_io_port(0x05);
+        cpu.write_io(0x05, 0xaf);
+        assert_eq!(cpu.read_io(0x05), 0xaf);
+
+        cpu.remove_io_port(0x05);
+        cpu.write_io(0x05, 0xaf);
+        assert_eq!(cpu.read_io(0x05), 0);
+    }
+
+    #[test]
+    fn test_in() {
+        let mut cpu = PP8085::new();
+        cpu.add_io_port(0x05);
+        cpu.write_io(0x05, 0xaf);
+        cpu.PC = 0x000a;
+        cpu.write_memory(0x000a, 0x05);
+        cpu.i_n();
+        assert_eq!(cpu.A, 0xaf);
+    }
+
+    #[test]
+    fn test_out() {
+        let mut cpu = PP8085::new();
+        cpu.add_io_port(0x05);
+        cpu.PC = 0x000a;
+        cpu.write_memory(0x000a, 0x05);
+        cpu.A = 0xaf;
+        cpu.out();
+        assert_eq!(cpu.read_io(0x05), 0xaf);
     }
 }
