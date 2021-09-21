@@ -1,14 +1,18 @@
 pub struct Memory {
+    data: Vec<u8>,
     size: u16,
-    data: [u8; 65536] // 64KiBi memory
 }
 
 impl Memory {
     pub fn new(size: u16) -> Memory {
         Memory {
+            data: vec![0; size as usize],
             size: size,
-            data: [0; 65536]
         }
+    }
+    
+    pub fn size(&self) -> u16 {
+        self.size
     }
 
     /// write to a given address in the memory
