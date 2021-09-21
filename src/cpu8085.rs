@@ -246,6 +246,46 @@ macro_rules! ret_seq {
     };
 }
 
+macro_rules! dad_p {
+    ($fn_name: ident,$a: ident, $b: ident) => {
+       fn $fn_name(&mut self) -> u8 {
+           let mut hl = self.get_addr_hl();
+           let ab = ((self.$a as u16) << 8) | (self.$b as u16);
+           if 0xffff - hl > ab {
+               hl += ab;
+               self.set_carry(false);
+               self.set_overflow(false);
+           } else {
+               hl = ab - (0xffff - hl + 0x0001);
+               self.set_carry(true);
+               self.set_overflow(true);
+           }
+           self.H = (hl >> 8) as u8;
+           self.L = (hl & 0x0f) as u8;
+           10
+       } 
+    };
+
+    ($fn_name: ident) => {
+       fn $fn_name(&mut self) -> u8 {
+           let mut hl = self.get_addr_hl();
+           let ab = self.SP;
+           if 0xffff - hl > ab {
+               hl += ab;
+               self.set_carry(false);
+               self.set_overflow(false);
+           } else {
+               hl = ab - (0xffff - hl + 0x0001);
+               self.set_carry(true);
+               self.set_overflow(true);
+           }
+           self.H = (hl >> 8) as u8;
+           self.L = (hl & 0x0f) as u8;
+           10
+       } 
+    }
+}
+
 #[allow(non_snake_case)]
 pub struct PP8085 {
     IR:u8, // Instruction Register
@@ -265,6 +305,8 @@ pub struct PP8085 {
 
     memory: Memory,
     cycles: u32,
+    IE: bool, // Interrupt enable
+    HLT: bool // indicates hlt state
 }
 
 impl PP8085 {
@@ -288,12 +330,15 @@ impl PP8085 {
 
             memory: Memory::new(8192),
             cycles: 0,
+
+            IE: false,
+            HLT: false,
         }
     }
 
     /// execution cycle
     pub fn run(&mut self) {
-        loop {
+        while !self.HLT {
             if self.cycles == 0 {
                 let _ins = self.read_8bits();
                 self.PC += 1;
@@ -439,6 +484,24 @@ impl PP8085 {
     /// NOP
     fn nop(&mut self) -> u8 {
         4
+    }
+
+    // EI
+    fn ei(&mut self) -> u8 {
+        self.IE = true;
+        4
+    }
+
+    // DI
+    fn di(&mut self) -> u8 {
+        self.IE = false;
+        4
+    }
+
+    // HLT
+    fn hlt(&mut self) -> u8 {
+        self.HLT = true;
+        5
     }
 
     // MOV Rs, RD instructions
@@ -1323,6 +1386,11 @@ impl PP8085 {
         7
     }
 
+    dad_p!(dad_b, B, C);
+    dad_p!(dad_d, D, E);
+    dad_p!(dad_h, H, L);
+    dad_p!(dad_sp);
+
     sub_r!(sub_a, A);
     sub_r!(sub_b, B);
     sub_r!(sub_c, C);
@@ -2048,5 +2116,25 @@ mod tests {
         assert_eq!(c, 6);
         assert_eq!(cpu.PC, 0x0000);
         assert_eq!(cpu.SP, 0x19fd);
+    }
+
+    #[test]
+    fn test_dad() {
+        let mut cpu = PP8085::new();
+        cpu.H = 0x01;
+        cpu.L = 0x02;
+        cpu.B = 0x03;
+        cpu.C = 0x04;
+        cpu.dad_b();
+        assert_eq!(cpu.get_addr_hl(), 0x0406);
+        assert!(!cpu.get_carry());
+
+        cpu.H = 0x00;
+        cpu.L = 0x02;
+        cpu.B = 0xff;
+        cpu.C = 0xff;
+        cpu.dad_b();
+        assert_eq!(cpu.get_addr_hl(), 0x0001);
+        assert!(cpu.get_carry());
     }
 }
