@@ -131,6 +131,40 @@ macro_rules! xra_r {
     }
 }
 
+macro_rules! ora_r {
+    ($fn_name: ident, $r: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            self.A |= self.$r;
+            self.set_sign((self.A | 1<<7) != 0);
+            self.set_zero(self.A == 0x00);
+            self.set_parity(PP8085::find_parity(self.A));
+            4
+        }
+    }
+}
+
+macro_rules! cmp_r {
+    ($fn_name: ident, $r: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            match self.$r.cmp(&self.A) {
+                std::cmp::Ordering::Equal => {
+                    self.set_carry(false);
+                    self.set_zero(true);
+                }
+                std::cmp::Ordering::Greater => {
+                    self.set_carry(false);
+                    self.set_zero(false);
+                }
+                std::cmp::Ordering::Less => {
+                    self.set_carry(true);
+                    self.set_zero(false);
+                }
+            }
+            4
+        }
+    };
+}
+
 #[allow(non_snake_case)]
 pub struct PP8085 {
     IR:u8, // Instruction Register
@@ -1292,21 +1326,123 @@ impl PP8085 {
         7
     }
 
-    ana_r! (ana_a, A);
-    ana_r! (ana_b, B);
-    ana_r! (ana_c, C);
-    ana_r! (ana_d, D);
-    ana_r! (ana_e, E);
-    ana_r! (ana_h, H);
-    ana_r! (ana_l, L);
+    ana_r!(ana_a, A);
+    ana_r!(ana_b, B);
+    ana_r!(ana_c, C);
+    ana_r!(ana_d, D);
+    ana_r!(ana_e, E);
+    ana_r!(ana_h, H);
+    ana_r!(ana_l, L);
 
-    xra_r! (xra_a, A);
-    xra_r! (xra_b, B);
-    xra_r! (xra_c, C);
-    xra_r! (xra_d, D);
-    xra_r! (xra_e, E);
-    xra_r! (xra_h, H);
-    xra_r! (xra_l, L);
+    fn ana_m(&mut self) -> u8 {
+        self.A &= self.memory.read(self.get_addr_hl()); 
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    fn ani(&mut self) -> u8 {
+        self.A &= self.read_8bits(); 
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    xra_r!(xra_a, A);
+    xra_r!(xra_b, B);
+    xra_r!(xra_c, C);
+    xra_r!(xra_d, D);
+    xra_r!(xra_e, E);
+    xra_r!(xra_h, H);
+    xra_r!(xra_l, L);
+
+    fn xra_m(&mut self) -> u8 {
+        self.A ^= self.memory.read(self.get_addr_hl()); 
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    fn xri(&mut self) -> u8 {
+        self.A ^= self.read_8bits();
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    ora_r!(ora_a, A);
+    ora_r!(ora_b, B);
+    ora_r!(ora_c, C);
+    ora_r!(ora_d, D);
+    ora_r!(ora_e, E);
+    ora_r!(ora_h, H);
+    ora_r!(ora_l, L);
+
+    fn ora_m(&mut self) -> u8 {
+        self.A |= self.memory.read(self.get_addr_hl()); 
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    fn ori(&mut self) -> u8 {
+        self.A |= self.read_8bits(); 
+        self.set_sign((self.A | 1<<7) != 0);
+        self.set_zero(self.A == 0x00);
+        self.set_parity(PP8085::find_parity(self.A));
+        7
+    }
+
+    cmp_r!(cmp_a, A);
+    cmp_r!(cmp_b, B);
+    cmp_r!(cmp_c, C);
+    cmp_r!(cmp_d, D);
+    cmp_r!(cmp_e, E);
+    cmp_r!(cmp_h, H);
+    cmp_r!(cmp_l, L);
+
+    /// CMP M
+    fn cmp_m(&mut self) -> u8 {
+        match self.memory.read(self.get_addr_hl()).cmp(&self.A) {
+            std::cmp::Ordering::Equal => {
+                self.set_carry(false);
+                self.set_zero(true);
+            }
+            std::cmp::Ordering::Greater => {
+                self.set_carry(false);
+                self.set_zero(false);
+            }
+            std::cmp::Ordering::Less => {
+                self.set_carry(true);
+                self.set_zero(false);
+            }
+        }
+        7
+    }
+
+    /// CPI XX
+    fn cpi(&mut self) -> u8 {
+        match self.read_8bits().cmp(&self.A) {
+            std::cmp::Ordering::Equal => {
+                self.set_carry(false);
+                self.set_zero(true);
+            }
+            std::cmp::Ordering::Greater => {
+                self.set_carry(false);
+                self.set_zero(false);
+            }
+            std::cmp::Ordering::Less => {
+                self.set_carry(true);
+                self.set_zero(false);
+            }
+        }
+        4
+    }
 
     /// JMP XXXX
     fn jmp(&mut self) -> u8 {
@@ -1416,6 +1552,49 @@ impl PP8085 {
     /// CMC
     fn cmc(&mut self) -> u8 {
         self.set_carry(!self.get_carry());
+        4
+    }
+
+    /// DAA
+    fn daa(&mut self) -> u8 {
+        let mut num: u8 = self.A;
+        if num & 0x0f > 0x09 || self.get_auxiliary_carry() {
+            num += 0x06;
+        } 
+        if num & 0xf0 > 0x90 || self.get_carry() {
+            num += 0x60;
+        }
+        self.A = num;
+        4
+    }
+
+    /// RLC
+    fn rlc(&mut self) -> u8 {
+        self.set_carry(self.A & (1<<7) != 0);
+        self.A = (self.A << 1) | ((self.A & (1 << 7)) >> 7);
+        4
+    }
+
+    /// RRC
+    fn rrc(&mut self) -> u8 {
+        self.set_carry(self.A & 1 != 0);
+        self.A = (self.A >> 1) | ((self.A & 1) << 7);
+        4
+    }
+
+    /// RAL
+    fn ral(&mut self) -> u8 {
+        let n  = (self.A & (1<<7)) >> 7;
+        self.A = (self.A << 1) | self.get_carry() as u8;
+        self.set_carry(n == 1);
+        4
+    }
+
+    /// RAR
+    fn rar(&mut self) -> u8 {
+        let n  = self.A & 1;
+        self.A = (self.A >> 1) | (self.get_carry() as u8) << 7;
+        self.set_carry(n == 1);
         4
     }
 }
@@ -1583,5 +1762,110 @@ mod tests {
         cpu.B = 0b00001000;
         cpu.xra_b();
         assert_eq!(cpu.A, 0b01010100);
+    }
+
+    #[test]
+    fn test_ora_r() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b01011100;
+        cpu.B = 0b00001000;
+        cpu.ora_b();
+        assert_eq!(cpu.A, 0b01011100);
+    }
+
+    #[test]
+    fn test_cmp_r() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0x45;
+        cpu.B = 0x55;
+        cpu.cmp_b();
+        assert!(!cpu.get_carry());
+        assert!(!cpu.get_zero());
+
+        cpu.A = 0x45;
+        cpu.B = 0x05;
+        cpu.cmp_b();
+        assert!(cpu.get_carry());
+        assert!(!cpu.get_zero());
+
+        cpu.A = 0x45;
+        cpu.B = 0x45;
+        cpu.cmp_b();
+        assert!(!cpu.get_carry());
+        assert!(cpu.get_zero());
+    }
+
+    #[test]
+    fn test_daa() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0x38;
+        cpu.B = 0x45;
+        cpu.add_b();
+        cpu.daa();
+        assert_eq!(cpu.A, 0x83);
+        assert!(!cpu.get_carry());
+        assert!(cpu.get_sign());
+        assert!(cpu.get_auxiliary_carry());
+        assert!(!cpu.get_parity());
+    }
+
+    #[test]
+    fn test_rlc() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b11001010;
+        cpu.rlc();
+        assert_eq!(cpu.A, 0b10010101);
+        assert!(cpu.get_carry());
+
+        cpu.A = 0b01001010;
+        cpu.rlc();
+        assert_eq!(cpu.A, 0b10010100);
+        assert!(!cpu.get_carry());
+    }
+
+    #[test]
+    fn test_rrc() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b11001010;
+        cpu.rrc();
+        assert_eq!(cpu.A, 0b01100101);
+        assert!(!cpu.get_carry());
+
+        cpu.A = 0b01001011;
+        cpu.rrc();
+        assert_eq!(cpu.A, 0b10100101);
+        assert!(cpu.get_carry());
+    }
+
+    #[test]
+    fn test_ral() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b11001010;
+        cpu.set_carry(false);
+        cpu.ral();
+        assert_eq!(cpu.A, 0b10010100);
+        assert!(cpu.get_carry());
+
+        cpu.A = 0b01001011;
+        cpu.set_carry(true);
+        cpu.ral();
+        assert_eq!(cpu.A, 0b10010111);
+        assert!(!cpu.get_carry());
+    }
+
+    #[test]
+    fn test_rar() {
+        let mut cpu = PP8085::new();
+        cpu.A = 0b11001010;
+        cpu.set_carry(false);
+        cpu.rar();
+        assert_eq!(cpu.A, 0b01100101);
+        assert!(!cpu.get_carry());
+
+        cpu.A = 0b01001011;
+        cpu.set_carry(true);
+        cpu.rar();
+        assert_eq!(cpu.A, 0b10100101);
+        assert!(cpu.get_carry());
     }
 }
