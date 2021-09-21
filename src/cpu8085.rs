@@ -165,6 +165,48 @@ macro_rules! cmp_r {
     };
 }
 
+macro_rules! call_seq {
+    ($fn_name: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            self.SP -= 1;
+            self.memory.write(self.SP, ((self.PC & 0xf0) >> 8) as u8);
+            self.SP -= 1;
+            self.memory.write(self.SP, (self.PC & 0x0f) as u8);
+            let (opl, oph) = self.read_16bits(); 
+            self.PC = ((oph as u16) << 8) | (opl as u16);
+            18
+        }
+    };
+
+    ($fn_name1: ident, $fn_name2: ident, $cond: ident) => {
+        fn $fn_name1 (&mut self) -> u8 {
+            let (opl, oph) = self.read_16bits(); 
+            if self.$cond() {
+                self.SP -= 1;
+                self.memory.write(self.SP, ((self.PC & 0xf0) >> 8) as u8);
+                self.SP -= 1;
+                self.memory.write(self.SP, (self.PC & 0x0f) as u8);
+                self.PC = ((oph as u16) << 8) | (opl as u16);
+                return 18;
+            }
+            9
+        }
+
+        fn $fn_name2 (&mut self) -> u8 {
+            let (opl, oph) = self.read_16bits(); 
+            if !self.$cond() {
+                self.SP -= 1;
+                self.memory.write(self.SP, ((self.PC & 0xf0) >> 8) as u8);
+                self.SP -= 1;
+                self.memory.write(self.SP, (self.PC & 0x0f) as u8);
+                self.PC = ((oph as u16) << 8) | (opl as u16);
+                return 18;
+            }
+            9
+        }
+    } 
+}
+
 #[allow(non_snake_case)]
 pub struct PP8085 {
     IR:u8, // Instruction Register
@@ -601,7 +643,7 @@ impl PP8085 {
         self.memory.write(self.SP, self.B);
         self.SP -= 1;
         self.memory.write(self.SP, self.C);
-        0
+        12 
     }
     
     /// PUSH D
@@ -1597,6 +1639,12 @@ impl PP8085 {
         self.set_carry(n == 1);
         4
     }
+
+    call_seq!(call);
+    call_seq!(cc, cnc, get_carry);
+    call_seq!(cz, cnz, get_zero);
+    call_seq!(cm, cp, get_sign);
+    call_seq!(cpe, cpo, get_parity);
 }
 
 // -----------------------TESTS----------------------------------
@@ -1867,5 +1915,49 @@ mod tests {
         cpu.rar();
         assert_eq!(cpu.A, 0b10100101);
         assert!(cpu.get_carry());
+    }
+
+    #[test]
+    fn test_cond_call() {
+        let mut cpu = PP8085::new();
+        cpu.set_carry(true);
+        cpu.SP = 0x19ff;
+        cpu.PC = 0x0000;
+        cpu.memory.write(0x0000, 0x22);
+        cpu.memory.write(0x0001, 0xaa);
+        let c = cpu.cc();
+        assert_eq!(c, 18);
+        assert_eq!(cpu.PC, 0xaa22);
+        assert_eq!(cpu.memory.read(cpu.SP), 0x02);
+        assert_eq!(cpu.memory.read(cpu.SP+1), 0x00);
+
+        cpu.set_carry(false);
+        cpu.SP = 0x19ff;
+        cpu.PC = 0x0000;
+        let c = cpu.cc();
+        assert_eq!(c, 9);
+        assert_eq!(cpu.PC, 0x0002);
+    }
+
+    #[test]
+    fn test_cond_call_fn2() {
+        let mut cpu = PP8085::new();
+        cpu.set_carry(false);
+        cpu.SP = 0x19ff;
+        cpu.PC = 0x0000;
+        cpu.memory.write(0x0000, 0x22);
+        cpu.memory.write(0x0001, 0xaa);
+        let c = cpu.cnc();
+        assert_eq!(c, 18);
+        assert_eq!(cpu.PC, 0xaa22);
+        assert_eq!(cpu.memory.read(cpu.SP), 0x02);
+        assert_eq!(cpu.memory.read(cpu.SP+1), 0x00);
+
+        cpu.set_carry(true);
+        cpu.SP = 0x19ff;
+        cpu.PC = 0x0000;
+        let c = cpu.cnc();
+        assert_eq!(c, 9);
+        assert_eq!(cpu.PC, 0x0002);
     }
 }
