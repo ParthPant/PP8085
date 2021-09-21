@@ -204,7 +204,46 @@ macro_rules! call_seq {
             }
             9
         }
-    } 
+    };
+}
+
+macro_rules! ret_seq {
+    ($fn_name: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            let l = self.memory.read(self.SP);
+            self.SP += 1;
+            let h = self.memory.read(self.SP);
+            self.SP += 1;
+            self.PC = ((h as u16) << 8) | (l as u16);
+            10
+        }
+    };
+
+    ($fn_name1: ident, $fn_name2: ident, $cond: ident) => {
+        fn $fn_name1 (&mut self) -> u8 {
+            if self.$cond() {
+                let l = self.memory.read(self.SP);
+                self.SP += 1;
+                let h = self.memory.read(self.SP);
+                self.SP += 1;
+                self.PC = ((h as u16) << 8) | (l as u16);
+                return 12;
+            }
+            6
+        }
+
+        fn $fn_name2 (&mut self) -> u8 {
+            if !self.$cond() {
+                let l = self.memory.read(self.SP);
+                self.SP += 1;
+                let h = self.memory.read(self.SP);
+                self.SP += 1;
+                self.PC = ((h as u16) << 8) | (l as u16);
+                return 12;
+            }
+            6
+        }
+    };
 }
 
 #[allow(non_snake_case)]
@@ -1645,6 +1684,12 @@ impl PP8085 {
     call_seq!(cz, cnz, get_zero);
     call_seq!(cm, cp, get_sign);
     call_seq!(cpe, cpo, get_parity);
+
+    ret_seq!(ret);
+    ret_seq!(rz, rnz, get_zero);
+    ret_seq!(rc, rnc, get_carry);
+    ret_seq!(rm, rp, get_sign);
+    ret_seq!(rpe, rpo, get_parity);
 }
 
 // -----------------------TESTS----------------------------------
@@ -1959,5 +2004,49 @@ mod tests {
         let c = cpu.cnc();
         assert_eq!(c, 9);
         assert_eq!(cpu.PC, 0x0002);
+    }
+
+    #[test]
+    fn test_cond_ret() {
+        let mut cpu = PP8085::new();
+        cpu.set_carry(true);
+        cpu.SP = 0x19fd;
+        cpu.PC = 0x0000;
+        cpu.memory.write(cpu.SP, 0x02);
+        cpu.memory.write(cpu.SP+1, 0xaa);
+        let c = cpu.rc();
+        assert_eq!(c, 12);
+        assert_eq!(cpu.PC, 0xaa02);
+        assert_eq!(cpu.SP, 0x19ff);
+
+        cpu.set_carry(false);
+        cpu.SP = 0x19fd;
+        cpu.PC = 0x0000;
+        let c = cpu.rc();
+        assert_eq!(c, 6);
+        assert_eq!(cpu.PC, 0x0000);
+        assert_eq!(cpu.SP, 0x19fd);
+    }
+
+    #[test]
+    fn test_cond_ret_fn2() {
+        let mut cpu = PP8085::new();
+        cpu.set_carry(false);
+        cpu.SP = 0x19fd;
+        cpu.PC = 0x0000;
+        cpu.memory.write(cpu.SP, 0x02);
+        cpu.memory.write(cpu.SP+1, 0xaa);
+        let c = cpu.rnc();
+        assert_eq!(c, 12);
+        assert_eq!(cpu.PC, 0xaa02);
+        assert_eq!(cpu.SP, 0x19ff);
+
+        cpu.set_carry(true);
+        cpu.SP = 0x19fd;
+        cpu.PC = 0x0000;
+        let c = cpu.rnc();
+        assert_eq!(c, 6);
+        assert_eq!(cpu.PC, 0x0000);
+        assert_eq!(cpu.SP, 0x19fd);
     }
 }
