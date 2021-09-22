@@ -21,7 +21,7 @@ pub struct PP8085 {
     PC:u16, // Program Counter Register
     SP:u16, // Stack Pointer
 
-    memory: Box<Memory>,
+    memory: Option<Box<Memory>>,
     io_ports: HashMap<u8, Box<IoPort>>,
 
     cycles: u32,
@@ -393,7 +393,7 @@ impl PP8085 {
             PC:0,  // Program Counter Register
             SP:0, // Stack Pointer
 
-            memory: Box::new(Memory::new(8192)),
+            memory: Some(Box::new(Memory::new(8192))),
             io_ports: HashMap::new(),
 
             cycles: 0,
@@ -659,7 +659,6 @@ impl PP8085 {
         while !self.HLT {
             if self.cycles == 0 {
                 let ins = self.read_8bits();
-                self.PC += 1;
                 self.cycles += self.decode_and_run(ins) as u32;
             }
             self.cycles -= 1;
@@ -699,11 +698,23 @@ impl PP8085 {
     }
 
     fn write_memory(&mut self, addr: u16, content: u8) {
-        self.memory.write(addr, content);
+        if let Some(m) = &mut self.memory {
+            m.write(addr, content);
+        } else {
+            panic!("Memory is not connected");
+        }
     }
 
     fn read_memory(&mut self, addr: u16) -> u8 {
-        self.memory.read(addr)
+        if let Some(m) = &self.memory {
+            m.read(addr)
+        } else {
+            panic!("Memory is not connected");
+        }
+    }
+
+    fn load_memory(&mut self, data: Memory) {
+        self.memory = Some(Box::new(data));
     }
 
     /// return parity flag
@@ -2141,8 +2152,8 @@ mod tests {
         let c = cpu.rst_1();
         assert_eq!(c, 12);
         assert_eq!(cpu.PC, 0x0008);
-        assert_eq!(cpu.memory.read(cpu.SP), 0x02);
-        assert_eq!(cpu.memory.read(cpu.SP+1), 0x01);
+        assert_eq!(cpu.read_memory(cpu.SP), 0x02);
+        assert_eq!(cpu.read_memory(cpu.SP+1), 0x01);
     }
 
     #[test]
@@ -2151,13 +2162,13 @@ mod tests {
         cpu.set_carry(true);
         cpu.SP = 0x19ff;
         cpu.PC = 0x0000;
-        cpu.memory.write(0x0000, 0x22);
-        cpu.memory.write(0x0001, 0xaa);
+        cpu.write_memory(0x0000, 0x22);
+        cpu.write_memory(0x0001, 0xaa);
         let c = cpu.cc();
         assert_eq!(c, 18);
         assert_eq!(cpu.PC, 0xaa22);
-        assert_eq!(cpu.memory.read(cpu.SP), 0x02);
-        assert_eq!(cpu.memory.read(cpu.SP+1), 0x00);
+        assert_eq!(cpu.read_memory(cpu.SP), 0x02);
+        assert_eq!(cpu.read_memory(cpu.SP+1), 0x00);
 
         cpu.set_carry(false);
         cpu.SP = 0x19ff;
@@ -2173,13 +2184,13 @@ mod tests {
         cpu.set_carry(false);
         cpu.SP = 0x19ff;
         cpu.PC = 0x0000;
-        cpu.memory.write(0x0000, 0x22);
-        cpu.memory.write(0x0001, 0xaa);
+        cpu.write_memory(0x0000, 0x22);
+        cpu.write_memory(0x0001, 0xaa);
         let c = cpu.cnc();
         assert_eq!(c, 18);
         assert_eq!(cpu.PC, 0xaa22);
-        assert_eq!(cpu.memory.read(cpu.SP), 0x02);
-        assert_eq!(cpu.memory.read(cpu.SP+1), 0x00);
+        assert_eq!(cpu.read_memory(cpu.SP), 0x02);
+        assert_eq!(cpu.read_memory(cpu.SP+1), 0x00);
 
         cpu.set_carry(true);
         cpu.SP = 0x19ff;
@@ -2195,8 +2206,8 @@ mod tests {
         cpu.set_carry(true);
         cpu.SP = 0x19fd;
         cpu.PC = 0x0000;
-        cpu.memory.write(cpu.SP, 0x02);
-        cpu.memory.write(cpu.SP+1, 0xaa);
+        cpu.write_memory(cpu.SP, 0x02);
+        cpu.write_memory(cpu.SP+1, 0xaa);
         let c = cpu.rc();
         assert_eq!(c, 12);
         assert_eq!(cpu.PC, 0xaa02);
@@ -2217,8 +2228,8 @@ mod tests {
         cpu.set_carry(false);
         cpu.SP = 0x2000-2;
         cpu.PC = 0x0000;
-        cpu.memory.write(cpu.SP, 0x02);
-        cpu.memory.write(cpu.SP+1, 0x12);
+        cpu.write_memory(cpu.SP, 0x02);
+        cpu.write_memory(cpu.SP+1, 0x12);
         let c = cpu.rnc();
         assert_eq!(c, 12);
         assert_eq!(cpu.PC, 0x1202);
@@ -2307,5 +2318,20 @@ mod tests {
         }
         assert_eq!(cpu.B, 0xff);
         assert!(cpu.get_overflow());
+    }
+
+    #[test]
+    fn test_memory_run() {
+        let mut cpu = PP8085::new();
+        let mut rom = Memory::new(8192);
+        rom.write(0x0000, 0x3e); // mvi a
+        rom.write(0x0001, 0x44);
+        rom.write(0x0002, 0x16); // mvi d
+        rom.write(0x0003, 0x32);
+        rom.write(0x0004, 0x92); // sub d
+        rom.write(0x0005, 0x76); // hlt
+        cpu.load_memory(rom);
+        cpu.run();
+        cpu.display()
     }
 }
