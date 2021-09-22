@@ -2,6 +2,31 @@ use super::memory::Memory;
 use super::ioport::IoPort;
 use std::collections::HashMap;
 
+#[allow(non_snake_case)]
+pub struct PP8085 {
+    IR:u8, // Instruction Register
+    A: u8, // Accumulator
+    F: u8, // Process Status Register
+    
+    // Registers
+    B: u8,
+    C: u8,
+    D: u8,
+    E: u8,
+    H: u8,
+    L: u8,
+
+    PC:u16,// Program Counter Register
+    SP:u16,// Stack Pointer
+
+    memory: Box<Memory>,
+    io_ports: HashMap<u8, Box<IoPort>>,
+
+    cycles: u32,
+    IE: bool, // Interrupt enable
+    HLT: bool // indicates hlt state
+}
+
 macro_rules!  mov_rd_rs {
     ($fn_name: ident, $dest: ident, $source: ident) => {
         fn $fn_name (&mut self) -> u8 {
@@ -25,6 +50,52 @@ macro_rules!  mov_rd_m {
         fn $fn_name (&mut self) -> u8 {
             self.$dest = self.read_memory(self.get_addr_hl());
             7
+        }
+    };
+}
+
+macro_rules! inr_r {
+    ($fn_name: ident, $r: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            if self.$r < 0xff {
+                self.$r += 1;
+            } else {
+                self.$r = 0x00;
+            }
+            let num = self.$r;
+            self.set_sign((num | 1<<7) != 0);
+            self.set_overflow(num == 0x00);
+            self.set_zero(num == 0x00);
+            if num != 0x00 {
+                self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
+            } else {
+                self.set_auxiliary_carry(true);
+            }
+            self.set_parity(PP8085::find_parity(num));
+            4
+        }
+    };
+}
+
+macro_rules! dcr_r {
+    ($fn_name: ident, $r: ident) => {
+        fn $fn_name (&mut self) -> u8 {
+            if self.$r > 0x00 {
+                self.$r -= 1;
+            } else {
+                self.$r = 0xff;
+            }
+            let num = self.$r;
+            self.set_sign((num | 1<<7) != 0);
+            self.set_overflow(num == 0xff);
+            self.set_zero(num == 0x00);
+            if num != 0xff {
+                self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
+            } else {
+                self.set_auxiliary_carry(true);
+            }
+            self.set_parity(PP8085::find_parity(num));
+            4
         }
     };
 }
@@ -299,31 +370,6 @@ macro_rules! dad_p {
            10
        } 
     }
-}
-
-#[allow(non_snake_case)]
-pub struct PP8085 {
-    IR:u8, // Instruction Register
-    A: u8, // Accumulator
-    F: u8, // Process Status Register
-    
-    // Registers
-    B: u8,
-    C: u8,
-    D: u8,
-    E: u8,
-    H: u8,
-    L: u8,
-
-    PC:u16,// Program Counter Register
-    SP:u16,// Stack Pointer
-
-    memory: Box<Memory>,
-    io_ports: HashMap<u8, Box<IoPort>>,
-
-    cycles: u32,
-    IE: bool, // Interrupt enable
-    HLT: bool // indicates hlt state
 }
 
 impl PP8085 {
@@ -1009,152 +1055,13 @@ impl PP8085 {
         6
     }
 
-    /// INR B
-    /// inrement B by 1
-    fn inr_b(&mut self) -> u8 {
-        if self.B < 0xff {
-            self.B += 1;
-        } else {
-            self.B = 0x00;
-        }
-        let num = self.B;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
-
-    /// INR C
-    /// inrement C by 1
-    fn inr_c(&mut self) -> u8 {
-        if self.C < 0xff {
-            self.C += 1;
-        } else {
-            self.C = 0x00;
-        }
-        let num = self.C;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
-
-    /// INR D
-    /// inrement D by 1
-    fn inr_d(&mut self) -> u8 {
-        if self.D < 0xff {
-            self.D += 1;
-        } else {
-            self.D = 0x00;
-        }
-        let num = self.D;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
-
-    /// INR E
-    /// inrement E by 1
-    fn inr_e(&mut self) -> u8 {
-        if self.E < 0xff {
-            self.E += 1;
-        } else {
-            self.E = 0x00;
-        }
-        let num = self.E;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
-
-    /// INR H
-    /// inrement H by 1
-    fn inr_h(&mut self) -> u8 {
-        if self.H < 0xff {
-            self.H += 1;
-        } else {
-            self.H = 0x00;
-        }
-        let num = self.H;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
-
-    /// INR L
-    /// inrement L by 1
-    fn inr_l(&mut self) -> u8 {
-        if self.L < 0xff {
-            self.L += 1;
-        } else {
-            self.L = 0x00;
-        }
-        let num = self.L;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
-    
-    /// INR A
-    /// inrement A by 1
-    fn inr_a(&mut self) -> u8 {
-        if self.A < 0xff {
-            self.A += 1;
-        } else {
-            self.A = 0x00;
-        }
-        let num = self.A;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0x00);
-        self.set_zero(num == 0x00);
-        if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4
-    }
+    inr_r!(inr_a, A);
+    inr_r!(inr_b, B);
+    inr_r!(inr_c, C);
+    inr_r!(inr_d, D);
+    inr_r!(inr_e, E);
+    inr_r!(inr_h, H);
+    inr_r!(inr_l, L);
 
     /// INR M
     /// inrement M by 1
@@ -1179,152 +1086,13 @@ impl PP8085 {
         10
     }
 
-    /// DCR B
-    /// decrement B by 1
-    fn dcr_b(&mut self) -> u8 {
-        if self.B > 0x00 {
-            self.B -= 1;
-        } else {
-            self.B = 0xff;
-        }
-        let num = self.B;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
-
-    /// DCR C
-    /// decrement C by 1
-    fn dcr_c(&mut self) -> u8 {
-        if self.C > 0x00 {
-            self.C -= 1;
-        } else {
-            self.C = 0xff;
-        }
-        let num = self.C;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
-
-    /// DCR D
-    /// decrement D by 1
-    fn dcr_d(&mut self) -> u8 {
-        if self.D > 0x00 {
-            self.D -= 1;
-        } else {
-            self.D = 0xff;
-        }
-        let num = self.D;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
-
-    /// DCR E
-    /// decrement E by 1
-    fn dcr_e(&mut self) -> u8 {
-        if self.E > 0x00 {
-            self.E -= 1;
-        } else {
-            self.E = 0xff;
-        }
-        let num = self.E;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
-
-    /// DCR H
-    /// decrement H by 1
-    fn dcr_h(&mut self) -> u8 {
-        if self.H > 0x00 {
-            self.H -= 1;
-        } else {
-            self.H = 0xff;
-        }
-        let num = self.H;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
-
-    /// DCR L
-    /// decrement L by 1
-    fn dcr_l(&mut self) -> u8 {
-        if self.L > 0x00 {
-            self.L -= 1;
-        } else {
-            self.L = 0xff;
-        }
-        let num = self.L;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
-
-    /// DCR A
-    /// decrement A by 1
-    fn dcr_a(&mut self) -> u8 {
-        if self.A > 0x00 {
-            self.A -= 1;
-        } else {
-            self.A = 0xff;
-        }
-        let num = self.A;
-        self.set_sign((num | 1<<7) != 0);
-        self.set_overflow(num == 0xff);
-        self.set_zero(num == 0x00);
-        if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
-        } else {
-            self.set_auxiliary_carry(true);
-        }
-        self.set_parity(PP8085::find_parity(num));
-        4 
-    }
+    dcr_r!(dcr_a, A);
+    dcr_r!(dcr_b, B);
+    dcr_r!(dcr_c, C);
+    dcr_r!(dcr_d, D);
+    dcr_r!(dcr_e, E);
+    dcr_r!(dcr_h, H);
+    dcr_r!(dcr_l, L);
 
     /// DCR M
     /// decrement M by 1
@@ -1828,6 +1596,16 @@ impl PP8085 {
         self.write_io(addr, self.A);
         10
     }
+
+    /// RIM
+    fn rim(&mut self) -> u8 {
+        4
+    }
+
+    /// SIM
+    fn sim(&mut self) -> u8 {
+        4
+    }
 }
 
 // -----------------------TESTS----------------------------------
@@ -2254,5 +2032,27 @@ mod tests {
         cpu.A = 0xaf;
         cpu.out();
         assert_eq!(cpu.read_io(0x05), 0xaf);
+    }
+
+    fn test_inr() {
+        let mut cpu = PP8085::new();
+        cpu.B = 0x00;
+        for x in 0..0xff {
+            assert_eq!(x, cpu.B);
+            cpu.inr_b();
+        }
+        assert_eq!(cpu.B, 0);
+        assert!(cpu.get_overflow());
+    }
+
+    fn test_dcr() {
+        let mut cpu = PP8085::new();
+        cpu.B = 0xff;
+        for x in 0xff..0x00 {
+            assert_eq!(cpu.B, x);
+            cpu.dcr_b();
+        }
+        assert_eq!(cpu.B, 0xff);
+        assert!(cpu.get_overflow());
     }
 }
