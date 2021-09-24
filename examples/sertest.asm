@@ -1,17 +1,17 @@
 ; Test program to bit-bang a single character out SOD as serial async data
 
 START:
-        mvi     c,'T'           ; Send a test character
+        mvi     c, dfh           ; Send a test character
 COUT:
         di
-        mvi     b,OUTBITS       ; Number of output bits
+        mvi     b,9fh       ; Number of output bits
         xra     a               ; Clear carry for start bit
 CO1:
         mvi     a,080H          ; Set the SDE flag
         rar                     ; Shift carry into SOD flag
         cmc                     ;   and invert carry.  Why? (serial is inverted?)
         sim                     ; Output data bit
-        lxi     h,BITTIME       ; Load the time delay for one bit width
+        lxi     h,d5h       ; Load the time delay for one bit width
 CO2:
         dcr     l               ; Wait for bit time
         jnz     CO2
