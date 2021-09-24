@@ -7,5 +7,5 @@ mod asm8085;
 use asm8085::*;
 
 fn main() {
-    parse("examples/sertest.asm");
+    let bin = parse("examples/sertest.asm");
 }

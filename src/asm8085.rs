@@ -44,7 +44,12 @@ fn get_words(data: &str) -> Vec<Vec<&str>> {
                 ";" => break,
                 "," => break, // no need for this here
                 " " => break, 
-                _ => l.push(word),
+                _ => {
+                    if word.chars().next().unwrap() == ';' { // ;Comments :')
+                        break;
+                    }
+                    l.push(word)
+                },
             }
         }
         if l.len() > 0 {
@@ -54,7 +59,7 @@ fn get_words(data: &str) -> Vec<Vec<&str>> {
     res
 }
 
-fn lex_line<'a>(line: &Vec<&str>) -> Res<Vec<Token>, &'a str> {
+fn lex_line<'a>(line: &'a Vec<&str>) -> Res<Vec<Token>, &'a str> {
     let mut i = 0;
     let mut res: Vec<Token> = Vec::new();
     while i < line.len() {
@@ -91,6 +96,8 @@ pub fn parse(filename: &str) -> Vec<u8>{
 
     // Second Pass: generate the rom
     let mut bin: Vec<u8> = Vec::new();
+    let mut lisiting = String::new();
+    let mut addr: usize = 0;
     for (i, token) in tokens.iter().enumerate() {
         match token {
             Token::Mnemonic(s, n_r, n_o)   => {
@@ -108,6 +115,7 @@ pub fn parse(filename: &str) -> Vec<u8>{
                     loc += 1;
                 }
                 bin.push(get_opcode(&ins));
+                lisiting.push_str(&format!("{:#06x}\t{}", addr, ins));
 
                 let num_bytes = n_o.clone();
                 let mut val: u16 = 0;
@@ -122,15 +130,20 @@ pub fn parse(filename: &str) -> Vec<u8>{
                     bin.push((val & 0x00ff) as u8);
                     if num_bytes == 2 {
                         bin.push((val >> 8) as u8);
+                        lisiting.push_str(&format!(" {:#06x}", val));
+                    } else {
+                        lisiting.push_str(&format!(" {:#02x}", val));
                     }
                 }
 
-                print!("\n");
+                addr += num_bytes + 1;
+                lisiting.push_str("\n");
             },
             _  => ()
         };
     };
 
+    // println!("{}", lisiting);
     bin
 }
 
