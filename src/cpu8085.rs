@@ -2329,9 +2329,13 @@ mod tests {
         rom.write(0x0002, 0x16); // mvi d
         rom.write(0x0003, 0x32);
         rom.write(0x0004, 0x92); // sub d
-        rom.write(0x0005, 0x76); // hlt
+        rom.write(0x0005, 0xd3); // out
+        rom.write(0x0006, 0xdf); 
+        rom.write(0x0007, 0x76); // hlt
         cpu.load_memory(rom);
+        cpu.add_io_port(0xdf);
         cpu.run();
-        cpu.display()
+        cpu.display();
+        println!("{:#02x}", cpu.read_io(0xdf));
     }
 }

@@ -2,9 +2,10 @@
 mod cpu8085;
 mod memory;
 mod ioport;
+mod asm8085;
 
-use cpu8085::PP8085;
+use asm8085::*;
 
 fn main() {
-    let mut cpu = PP8085::new();
+    parse("examples/test.asm");
 }
