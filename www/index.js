@@ -1,7 +1,6 @@
 import {PP8085, Memory, parse_wasm} from "wasm-pp8085";
 
 const cpu = PP8085.new();
-const rom = Memory.new(1024*8);
 
 var prg = `
 ; COMMENT DESCRIPTION
@@ -11,10 +10,8 @@ NEXT:     DCR A
           HLT
 `
 const bin = parse_wasm(prg);
-for (let i = 0; i<bin.length; i++) {
-    rom.write(i, bin[i]);
-}
-
+const rom = Memory.new_from_js(bin, 1024*8);
+console.log(rom.get_copy());
 cpu.load_memory(rom);
 cpu.run();
 console.log(cpu.get_summary());
