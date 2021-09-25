@@ -4,6 +4,7 @@ use std::io::{Result, Read};
 use std::result::Result as Res;
 use std::collections::HashMap;
 use std::fmt;
+use wasm_bindgen::prelude::*;
 
 enum Token {
     Mnemonic(String, usize, usize), // main instruction mnemonic
@@ -70,6 +71,7 @@ fn lex_line<'a>(line: &'a Vec<&str>) -> Res<Vec<Token>, &'a str> {
 }
 
 pub fn assemble(code: &str) -> (Vec<u8>, String) {
+    let code = code.replace(",", " ");
     let parsed = get_words(&code);
 
     let mut tokens: Vec<Token> = Vec::new();
@@ -144,8 +146,13 @@ pub fn assemble(code: &str) -> (Vec<u8>, String) {
 }
 
 pub fn parse(filename: &str) -> (Vec<u8>, String) {
-    let file = read_file(filename).unwrap().replace(",", " ");
+    let file = read_file(filename).unwrap();
     assemble(&file)
+}
+
+#[wasm_bindgen]
+pub fn parse_wasm(data: &str) -> Vec<u8> {
+    assemble(&data).0
 }
 
 fn get_opcode(ins: &str) -> u8 {

@@ -12,5 +12,12 @@ path = "src/bin.rs"
 [lib]
 name = "pp8085_lib"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+wasm-bindgen = "0.2.78"
+console_error_panic_hook = "0.1.6"
+cfg-if = "1.0.0"
+wee_alloc = {version = "0.4.1", optional = true}
+
+[features]

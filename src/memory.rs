@@ -1,26 +1,18 @@
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
 pub struct Memory {
     data: Vec<u8>,
     size: u16,
 }
 
+#[wasm_bindgen]
 impl Memory {
     pub fn new(size: u16) -> Memory {
         Memory {
             data: vec![0; size as usize],
             size: size,
         }
-    }
-    
-    pub fn new_from(bin: &Vec<u8>, size: usize) -> Memory {
-        assert!(bin.len() < size);            
-        let mut res = Memory {
-            data: vec![0; size as usize],
-            size: size as u16,
-        };
-        for i in 0..bin.len() {
-             res.data[i] = bin[i];
-        };
-        res
     }
     
     pub fn size(&self) -> u16 {
@@ -52,5 +44,19 @@ impl Memory {
         } else {
             println!("Memory out of range");
         }
+    }
+}
+
+impl Memory {
+    pub fn new_from(bin: &Vec<u8>, size: usize) -> Memory {
+        assert!(bin.len() < size);            
+        let mut res = Memory {
+            data: vec![0; size as usize],
+            size: size as u16,
+        };
+        for i in 0..bin.len() {
+             res.data[i] = bin[i];
+        };
+        res
     }
 }

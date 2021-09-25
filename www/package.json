@@ -1,0 +1,25 @@
+{
+  "name": "pp8085-emulation",
+  "version": "0.1.0",
+  "description": "Intel 8085 microprocessor emulation using Rust and WASM",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "start": "webpack-dev-server"
+  },
+  "keywords": [
+    "webassembly",
+    "wasm",
+    "rust",
+    "webpack"
+  ],
+  "dependencies": {
+    "wasm-pp8085": "file:../pkg"
+  },
+  "devDependencies": {
+    "webpack": "^4.29.3",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.5",
+    "copy-webpack-plugin": "^5.0.0"
+  }
+}

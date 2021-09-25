@@ -1,8 +1,12 @@
 use super::memory::Memory;
 use super::ioport::IoPort;
 use std::collections::HashMap;
+use std::fmt;
+use wasm_bindgen::prelude::*;
+use console_error_panic_hook;
 
 #[allow(non_snake_case)]
+#[wasm_bindgen]
 pub struct PP8085 {
     IR:u8, // Instruction Register
     A: u8, // Accumulator
@@ -25,6 +29,95 @@ pub struct PP8085 {
     cycles: u32,
     IE: bool,  // Interrupt enable
     HLT: bool, // indicates hlt state
+}
+
+impl fmt::Display for PP8085 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "A:{}\tF:{}\n
+                   B:{}\tC:{}\n
+                   D:{}\tE:{}\n
+                   H:{}\tL:{}\n
+                   PC:{}\tSP{}\n", self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L, self.PC, self.SP)
+    }
+}
+
+#[wasm_bindgen]
+impl PP8085 {
+    /// creates a new cpu and initializes everything to zero.
+    pub fn new() -> PP8085 {
+        console_error_panic_hook::set_once();
+        PP8085 {
+            IR:0,  // Instruction Register
+            A: 0,  // Accumulator
+            F: 0,  // Process Status Register
+
+            // Registers
+            B: 0,
+            C: 0,
+            D: 0,
+            E: 0,
+            H: 0,
+            L: 0,
+
+            PC:0,  // Program Counter Register
+            SP:0, // Stack Pointer
+
+            memory: Some(Box::new(Memory::new(8192))),
+            io_ports: HashMap::new(),
+
+            cycles: 0,
+            IE: false,
+            HLT: false,
+        }
+    }
+
+    /// execution cycle
+    pub fn run(&mut self) {
+        while !self.HLT {
+            if self.cycles == 0 {
+                let ins = self.read_8bits();
+                self.cycles += self.decode_and_run(ins) as u32;
+            }
+            self.cycles -= 1;
+        }
+    }
+
+    /// execute one instruction and stop with no regard to cycles 
+    pub fn run_next(&mut self) {
+        if !self.HLT {
+            let ins = self.read_8bits();
+            self.decode_and_run(ins) as u32;
+        }
+    }
+
+    pub fn add_io_port(&mut self, addr: u8) {
+        self.io_ports.insert(addr, Box::new(IoPort::new(addr)));
+    }
+
+    pub fn remove_io_port(&mut self, addr: u8) {
+        self.io_ports.remove(&addr);
+    }
+
+    pub fn load_memory(&mut self, data: Memory) {
+        self.memory = Some(Box::new(data));
+    }
+
+    pub fn read_io(&mut self, addr: u8) -> u8 {
+        match self.io_ports.get(&addr) {
+            Some(d) => d.read(),
+            None => 0,
+        }
+    }
+
+    pub fn write_io(&mut self, addr: u8, data: u8) {
+        if let Some(port) = self.io_ports.get_mut(&addr) {
+            port.write(data);
+        };
+    }
+
+    pub fn get_summary(&self) -> String {
+        self.to_string()
+    }
 }
 
 macro_rules!  mov_rd_rs {
@@ -373,31 +466,15 @@ macro_rules! dad_p {
 }
 
 impl PP8085 {
-    /// creates a new cpu and initializes everything to zero.
-    pub fn new() -> PP8085 {
-        PP8085 {
-            IR:0,  // Instruction Register
-            A: 0,  // Accumulator
-            F: 0,  // Process Status Register
-
-            // Registers
-            B: 0,
-            C: 0,
-            D: 0,
-            E: 0,
-            H: 0,
-            L: 0,
-
-            PC:0,  // Program Counter Register
-            SP:0, // Stack Pointer
-
-            memory: Some(Box::new(Memory::new(8192))),
-            io_ports: HashMap::new(),
-
-            cycles: 0,
-            IE: false,
-            HLT: false,
-        }
+    /// display the contents of all the registers.
+    pub fn display(&self) {
+        println!("A : {:#02x}\tF : {:#02x}", self.A, self.F);
+        println!("B : {:#02x}\tC : {:#02x}", self.B, self.C);
+        println!("D : {:#02x}\tE : {:#02x}", self.D, self.E);
+        println!("H : {:#02x}\tL : {:#02x}", self.H, self.L);
+        println!("PC: {:#04x}", self.PC);
+        println!("SP: {:#04x}", self.SP);
+        println!("-----------------------------");
     }
 
     fn decode_and_run(&mut self, opcode: u8) -> u8 {
@@ -653,57 +730,6 @@ impl PP8085 {
         }
     }
 
-    /// execution cycle
-    pub fn run(&mut self) {
-        while !self.HLT {
-            if self.cycles == 0 {
-                let ins = self.read_8bits();
-                self.cycles += self.decode_and_run(ins) as u32;
-            }
-            self.cycles -= 1;
-        }
-    }
-
-    /// execute one instruction and stop with no regard to cycles 
-    pub fn run_next(&mut self) {
-        if !self.HLT {
-            let ins = self.read_8bits();
-            self.decode_and_run(ins) as u32;
-        }
-    }
-
-    /// display the contents of all the registers.
-    pub fn display(&self) {
-        println!("A : {:#02x}\tF : {:#02x}", self.A, self.F);
-        println!("B : {:#02x}\tC : {:#02x}", self.B, self.C);
-        println!("D : {:#02x}\tE : {:#02x}", self.D, self.E);
-        println!("H : {:#02x}\tL : {:#02x}", self.H, self.L);
-        println!("PC: {:#04x}", self.PC);
-        println!("SP: {:#04x}", self.SP);
-        println!("-----------------------------");
-    }
-
-    pub fn add_io_port(&mut self, addr: u8) {
-        self.io_ports.insert(addr, Box::new(IoPort::new(addr)));
-    }
-
-    pub fn remove_io_port(&mut self, addr: u8) {
-        self.io_ports.remove(&addr);
-    }
-
-    fn read_io(&mut self, addr: u8) -> u8 {
-        match self.io_ports.get(&addr) {
-            Some(d) => d.read(),
-            None => 0,
-        }
-    }
-
-    fn write_io(&mut self, addr: u8, data: u8) {
-        if let Some(port) = self.io_ports.get_mut(&addr) {
-            port.write(data);
-        };
-    }
-
     fn write_memory(&mut self, addr: u16, content: u8) {
         if let Some(m) = &mut self.memory {
             m.write(addr, content);
@@ -718,10 +744,6 @@ impl PP8085 {
         } else {
             panic!("Memory is not connected");
         }
-    }
-
-    pub fn load_memory(&mut self, data: Memory) {
-        self.memory = Some(Box::new(data));
     }
 
     /// return parity flag

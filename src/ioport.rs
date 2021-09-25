@@ -1,8 +1,12 @@
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
 pub struct IoPort {
     addr: u8,
     data: u8,
 }
 
+#[wasm_bindgen]
 impl IoPort {
     pub fn new(addr: u8) -> IoPort {
         IoPort {
