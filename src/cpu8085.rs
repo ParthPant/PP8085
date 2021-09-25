@@ -2,8 +2,6 @@ use super::memory::Memory;
 use super::ioport::IoPort;
 use std::collections::HashMap;
 
-type Instruction = fn(cpu: &mut PP8085) -> u8;
-
 #[allow(non_snake_case)]
 pub struct PP8085 {
     IR:u8, // Instruction Register
@@ -403,6 +401,7 @@ impl PP8085 {
     }
 
     fn decode_and_run(&mut self, opcode: u8) -> u8 {
+        self.IR = opcode;
         match opcode {
             0x00 => self.nop(),
             0x01 => self.lxi_b(),
@@ -662,6 +661,14 @@ impl PP8085 {
                 self.cycles += self.decode_and_run(ins) as u32;
             }
             self.cycles -= 1;
+        }
+    }
+
+    /// execute one instruction and stop with no regard to cycles 
+    pub fn run_next(&mut self) {
+        if !self.HLT {
+            let ins = self.read_8bits();
+            self.decode_and_run(ins) as u32;
         }
     }
 
@@ -1158,7 +1165,10 @@ impl PP8085 {
     /// POP H
     /// pop HL from stack
     fn pop_h(&mut self) -> u8 {
-        self.L = self.read_memory(self.SP); self.SP += 1; self.H = self.read_memory(self.SP); self.SP += 1;
+        self.L = self.read_memory(self.SP);
+        self.SP += 1;
+        self.H = self.read_memory(self.SP);
+        self.SP += 1;
         10
     }
 
@@ -2298,6 +2308,7 @@ mod tests {
         assert_eq!(cpu.read_io(0x05), 0xaf);
     }
 
+    #[test]
     fn test_inr() {
         let mut cpu = PP8085::new();
         cpu.B = 0x00;
@@ -2305,14 +2316,17 @@ mod tests {
             assert_eq!(x, cpu.B);
             cpu.inr_b();
         }
-        assert_eq!(cpu.B, 0);
+        assert_eq!(cpu.B, 0xff);
+        cpu.inr_b();
+        assert_eq!(cpu.B, 0x00);
         assert!(cpu.get_overflow());
     }
 
+    #[test]
     fn test_dcr() {
         let mut cpu = PP8085::new();
-        cpu.B = 0xff;
-        for x in 0xff..0x00 {
+        cpu.B = 0xfe;
+        for x in (0x00..0xff).rev() {
             assert_eq!(cpu.B, x);
             cpu.dcr_b();
         }
