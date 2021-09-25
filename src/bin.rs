@@ -1,12 +1,6 @@
-#![allow(dead_code)]
-mod cpu8085;
-mod memory;
-mod ioport;
-mod asm8085;
-
-use asm8085::*;
-use memory::Memory;
-use cpu8085::PP8085;
+use pp8085_lib::memory::Memory;
+use pp8085_lib::cpu8085::PP8085;
+use pp8085_lib::asm8085::*;
 
 fn main() {
     let (bin, listing) = parse("examples/test.asm");
