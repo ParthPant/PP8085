@@ -9,7 +9,7 @@ use memory::Memory;
 use cpu8085::PP8085;
 
 fn main() {
-    let (bin, listing) = parse("examples/led1.asm");
+    let (bin, listing) = parse("examples/test.asm");
     let rom = Memory::new_from(&bin, 1024*8);
     let mut cpu = PP8085::new();
 

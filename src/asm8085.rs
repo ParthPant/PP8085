@@ -30,8 +30,6 @@ fn read_file(filename: &str) -> Result<String> {
     let mut file = File::open(filename)?;
     let mut data = String::new();
     file.read_to_string(&mut data)?;
-    // do this here do you dont have to do it later on!
-    data = data.replace(",", " ");
     Ok(data)
 }
 
@@ -71,9 +69,8 @@ fn lex_line<'a>(line: &'a Vec<&str>) -> Res<Vec<Token>, &'a str> {
     Ok(res)
 }
 
-pub fn parse(filename: &str) -> (Vec<u8>, String) {
-    let file = read_file(filename).unwrap();
-    let parsed = get_words(&file);
+pub fn assemble(code: &str) -> (Vec<u8>, String) {
+    let parsed = get_words(&code);
 
     let mut tokens: Vec<Token> = Vec::new();
     for line in parsed.iter() {
@@ -100,7 +97,7 @@ pub fn parse(filename: &str) -> (Vec<u8>, String) {
     let mut addr: usize = 0;
     for (i, token) in tokens.iter().enumerate() {
         match token {
-            Token::Mnemonic(s, n_r, n_o)   => {
+            Token::Mnemonic(s, n_r, n_o) => {
                 let mut ins: String = s.clone();
                 let mut num_registers: usize = n_r.clone();
                 let mut loc = i+1;
@@ -117,7 +114,7 @@ pub fn parse(filename: &str) -> (Vec<u8>, String) {
                 bin.push(get_opcode(&ins));
                 listing.push_str(&format!("{:#06x}\t{}", addr, ins));
 
-                let num_bytes = n_o.clone();
+                let num_bytes = *n_o;
                 let mut val: u16 = 0;
 
                 if num_bytes > 0 {
@@ -143,8 +140,12 @@ pub fn parse(filename: &str) -> (Vec<u8>, String) {
         };
     };
 
-    // println!("{}", lisiting);
     (bin, listing)
+}
+
+pub fn parse(filename: &str) -> (Vec<u8>, String) {
+    let file = read_file(filename).unwrap().replace(",", " ");
+    assemble(&file)
 }
 
 fn get_opcode(ins: &str) -> u8 {
