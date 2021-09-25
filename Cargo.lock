@@ -31,6 +31,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "js-sys"
+version = "0.3.55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cc9ffccd38c451a86bf13657df244e9c3f37493cce8e5e21e940963777acc84"
+dependencies = [
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -63,6 +72,7 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
  "console_error_panic_hook",
+ "js-sys",
  "wasm-bindgen",
  "wee_alloc",
 ]

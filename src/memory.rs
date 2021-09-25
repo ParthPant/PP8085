@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+use js_sys::Uint8Array;
 
 #[wasm_bindgen]
 pub struct Memory {
@@ -44,6 +45,20 @@ impl Memory {
         } else {
             println!("Memory out of range");
         }
+    }
+
+    pub fn new_from_js(bin: &JsValue, size: usize) -> Memory {
+        let buffer = Uint8Array::new(bin);
+        let bin = buffer.to_vec();
+        assert!(bin.len() < size);            
+        let mut res = Memory {
+            data: vec![0; size as usize],
+            size: size as u16,
+        };
+        for i in 0..bin.len() {
+             res.data[i] = bin[i];
+        };
+        res
     }
 }
 

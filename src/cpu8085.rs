@@ -33,11 +33,8 @@ pub struct PP8085 {
 
 impl fmt::Display for PP8085 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "A:{}\tF:{}\n
-                   B:{}\tC:{}\n
-                   D:{}\tE:{}\n
-                   H:{}\tL:{}\n
-                   PC:{}\tSP{}\n", self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L, self.PC, self.SP)
+        write!(f, "A:{}\tF:{}\nB:{}\tC:{}\nD:{}\tE:{}\nH:{}\tL:{}\nPC:{}\tSP{}\n",
+        self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L, self.PC, self.SP)
     }
 }
 
@@ -117,6 +114,21 @@ impl PP8085 {
 
     pub fn get_summary(&self) -> String {
         self.to_string()
+    }
+
+    pub fn get_a(&self) -> u8 {self.A}
+    pub fn get_f(&self) -> u8 {self.F}
+    pub fn get_b(&self) -> u8 {self.B}
+    pub fn get_c(&self) -> u8 {self.C}
+    pub fn get_d(&self) -> u8 {self.D}
+    pub fn get_e(&self) -> u8 {self.E}
+    pub fn get_h(&self) -> u8 {self.H}
+    pub fn get_l(&self) -> u8 {self.L}
+    pub fn get_sp(&self) -> u16 {self.SP}
+    pub fn get_pc(&self) -> u16 {self.PC}
+    
+    pub fn reset(&mut self) {
+        self.A = 0; self.B = 0; self.C = 0; self.D = 0; self.E = 0; self.H = 0; self.L = 0; self.SP = 0; self.PC = 0; self.F = 0;
     }
 }
 
