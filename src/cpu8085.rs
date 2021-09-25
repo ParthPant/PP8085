@@ -92,7 +92,7 @@ macro_rules! dcr_r {
             self.set_overflow(num == 0xff);
             self.set_zero(num == 0x00);
             if num != 0xff {
-                self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
+                self.set_auxiliary_carry(((num+1) & 0x0f) < 1);
             } else {
                 self.set_auxiliary_carry(true);
             }
@@ -667,10 +667,10 @@ impl PP8085 {
 
     /// display the contents of all the registers.
     pub fn display(&self) {
-        println!("A : {:#02x}       F : {:#02x}", self.A, self.F);
-        println!("B : {:#02x}       C : {:#02x}", self.B, self.C);
-        println!("D : {:#02x}       E : {:#02x}", self.D, self.E);
-        println!("H : {:#02x}       L : {:#02x}", self.H, self.L);
+        println!("A : {:#02x}\tF : {:#02x}", self.A, self.F);
+        println!("B : {:#02x}\tC : {:#02x}", self.B, self.C);
+        println!("D : {:#02x}\tE : {:#02x}", self.D, self.E);
+        println!("H : {:#02x}\tL : {:#02x}", self.H, self.L);
         println!("PC: {:#04x}", self.PC);
         println!("SP: {:#04x}", self.SP);
         println!("-----------------------------");
@@ -713,7 +713,7 @@ impl PP8085 {
         }
     }
 
-    fn load_memory(&mut self, data: Memory) {
+    pub fn load_memory(&mut self, data: Memory) {
         self.memory = Some(Box::new(data));
     }
 

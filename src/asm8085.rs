@@ -71,7 +71,7 @@ fn lex_line<'a>(line: &'a Vec<&str>) -> Res<Vec<Token>, &'a str> {
     Ok(res)
 }
 
-pub fn parse(filename: &str) -> Vec<u8>{
+pub fn parse(filename: &str) -> (Vec<u8>, String) {
     let file = read_file(filename).unwrap();
     let parsed = get_words(&file);
 
@@ -96,7 +96,7 @@ pub fn parse(filename: &str) -> Vec<u8>{
 
     // Second Pass: generate the rom
     let mut bin: Vec<u8> = Vec::new();
-    let mut lisiting = String::new();
+    let mut listing = String::new();
     let mut addr: usize = 0;
     for (i, token) in tokens.iter().enumerate() {
         match token {
@@ -115,7 +115,7 @@ pub fn parse(filename: &str) -> Vec<u8>{
                     loc += 1;
                 }
                 bin.push(get_opcode(&ins));
-                lisiting.push_str(&format!("{:#06x}\t{}", addr, ins));
+                listing.push_str(&format!("{:#06x}\t{}", addr, ins));
 
                 let num_bytes = n_o.clone();
                 let mut val: u16 = 0;
@@ -130,21 +130,21 @@ pub fn parse(filename: &str) -> Vec<u8>{
                     bin.push((val & 0x00ff) as u8);
                     if num_bytes == 2 {
                         bin.push((val >> 8) as u8);
-                        lisiting.push_str(&format!(" {:#06x}", val));
+                        listing.push_str(&format!(" {:#06x}", val));
                     } else {
-                        lisiting.push_str(&format!(" {:#02x}", val));
+                        listing.push_str(&format!(" {:#02x}", val));
                     }
                 }
 
                 addr += num_bytes + 1;
-                lisiting.push_str("\n");
+                listing.push_str("\n");
             },
             _  => ()
         };
     };
 
     // println!("{}", lisiting);
-    bin
+    (bin, listing)
 }
 
 fn get_opcode(ins: &str) -> u8 {
