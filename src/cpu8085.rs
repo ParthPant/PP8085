@@ -3,7 +3,6 @@ use super::ioport::IoPort;
 use std::collections::HashMap;
 use std::fmt;
 use wasm_bindgen::prelude::*;
-use console_error_panic_hook;
 
 #[allow(non_snake_case)]
 #[wasm_bindgen]
@@ -23,7 +22,7 @@ pub struct PP8085 {
     PC:u16, // Program Counter Register
     SP:u16, // Stack Pointer
 
-    memory: Option<Box<Memory>>,
+    memory: Memory,
     io_ports: HashMap<u8, Box<IoPort>>,
 
     cycles: u32,
@@ -59,7 +58,7 @@ impl PP8085 {
             PC:0,  // Program Counter Register
             SP:0, // Stack Pointer
 
-            memory: Some(Box::new(Memory::new(8192))),
+            memory: Memory::new(8192),
             io_ports: HashMap::new(),
 
             cycles: 0,
@@ -96,7 +95,7 @@ impl PP8085 {
     }
 
     pub fn load_memory(&mut self, data: Memory) {
-        self.memory = Some(Box::new(data));
+        self.memory = data;
     }
 
     pub fn read_io(&mut self, addr: u8) -> u8 {
@@ -129,6 +128,8 @@ impl PP8085 {
     
     pub fn reset(&mut self) {
         self.A = 0; self.B = 0; self.C = 0; self.D = 0; self.E = 0; self.H = 0; self.L = 0; self.SP = 0; self.PC = 0; self.F = 0;
+        self.HLT = false;
+        self.cycles = 0;
     }
 }
 
@@ -743,19 +744,21 @@ impl PP8085 {
     }
 
     fn write_memory(&mut self, addr: u16, content: u8) {
-        if let Some(m) = &mut self.memory {
-            m.write(addr, content);
-        } else {
-            panic!("Memory is not connected");
-        }
+        // if let Some(m) = &mut self.memory {
+            // m.write(addr, content);
+        // } else {
+        //     panic!("Memory is not connected");
+        // }
+        self.memory.write(addr, content);
     }
 
-    fn read_memory(&mut self, addr: u16) -> u8 {
-        if let Some(m) = &self.memory {
-            m.read(addr)
-        } else {
-            panic!("Memory is not connected");
-        }
+    pub fn read_memory(&mut self, addr: u16) -> u8 {
+        // if let Some(m) = &self.memory {
+        //     m.read(addr)
+        // } else {
+        //     panic!("Memory is not connected");
+        // }
+        self.memory.read(addr)
     }
 
     /// return parity flag

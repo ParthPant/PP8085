@@ -3,34 +3,34 @@ import './App.css';
 import { useState } from "react";
 import { setConstantValue } from "typescript";
 
+const code = `
+; COMMENT DESCRIPTION
+            MVI A, 5dh
+  NEXT:     DCR A
+            JNZ NEXT 
+            HLT
+`
+
 function App(props: any) {
 
   const mp = props.wasm.PP8085.new();
-  const rom = props.wasm.Memory.new(10324*8);
-  mp.load_memory(rom);
 
-  const code = `
-  ; COMMENT DESCRIPTION
-              MVI A, 5dh
-    NEXT:     DCR A
-              JNZ NEXT 
-              HLT
-  `
   const [cpu, setCpu] = useState(mp);
   const [source, setSource] = useState("");
-  const [n, setN] = useState(0);
+  const [n, setN] = useState(false);
+
+  const bin = props.wasm.parse_wasm(code);
+  let rom = props.wasm.Memory.new_from_js(bin, 1024*8);
+  cpu.load_memory(rom);
   
   const handleClick = () => {
     cpu.run_next();
-    setN(n+1);
+    setN(!n);
   }
 
   const handleCompile = () => {
-    const bin = props.wasm.parse_wasm(source);
-    const rom = props.wasm.Memory.new_from_js(bin, 10324*8);
     cpu.reset();
-    cpu.load_memory(rom);
-    setN(n+1);
+    setN(!n);
   }
 
   const handleChange = (e: any) => {

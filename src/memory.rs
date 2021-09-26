@@ -74,4 +74,8 @@ impl Memory {
         };
         res
     }
+
+    pub fn get_data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
 }
