@@ -125,6 +125,7 @@ impl PP8085 {
     pub fn get_l(&self) -> u8 {self.L}
     pub fn get_sp(&self) -> u16 {self.SP}
     pub fn get_pc(&self) -> u16 {self.PC}
+    pub fn get_hlt(&self) -> bool {self.HLT}
     
     pub fn reset(&mut self) {
         self.A = 0; self.B = 0; self.C = 0; self.D = 0; self.E = 0; self.H = 0; self.L = 0; self.SP = 0; self.PC = 0; self.F = 0;
