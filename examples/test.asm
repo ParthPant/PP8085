@@ -1,5 +1,6 @@
 ; COMMENT DESCRIPTION
-          MVI A, 5dh
-NEXT:     DCR A
-          JZ NEXT 
-          HLT
+        MVI A, 7h
+NEXT:   DCR A
+        OUT ffh  
+        JNZ NEXT 
+        HLT

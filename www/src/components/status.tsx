@@ -1,4 +1,4 @@
-import { Box, Table, TableRow, TableCell, TableHead, Paper} from '@mui/material'
+import { Table, TableRow, TableCell, TableHead, Paper} from '@mui/material'
 
 import { PP8085 } from "pp8085";
 
@@ -42,6 +42,10 @@ function Status(props: {cpu: PP8085}) {
                         <TableCell>0x{props.cpu.get_sp().toString(16)}</TableCell>
                         <TableCell>PC</TableCell>
                         <TableCell>0x{props.cpu.get_pc().toString(16)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        <TableCell>IR</TableCell>
+                        <TableCell>0x{props.cpu.get_ir().toString(16)}</TableCell>
                     </TableRow>
                 </Table>
             </Paper>

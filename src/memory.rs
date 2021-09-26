@@ -60,6 +60,10 @@ impl Memory {
         };
         res
     }
+
+    pub fn get_data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
 }
 
 impl Memory {
@@ -73,9 +77,5 @@ impl Memory {
              res.data[i] = bin[i];
         };
         res
-    }
-
-    pub fn get_data(&self) -> Vec<u8> {
-        self.data.clone()
     }
 }

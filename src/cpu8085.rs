@@ -71,8 +71,8 @@ impl PP8085 {
     pub fn run(&mut self) {
         while !self.HLT {
             if self.cycles == 0 {
-                let ins = self.read_8bits();
-                self.cycles += self.decode_and_run(ins) as u32;
+                self.IR = self.read_8bits();
+                self.cycles += self.decode_and_run() as u32;
             }
             self.cycles -= 1;
         }
@@ -81,8 +81,8 @@ impl PP8085 {
     /// execute one instruction and stop with no regard to cycles 
     pub fn run_next(&mut self) {
         if !self.HLT {
-            let ins = self.read_8bits();
-            self.decode_and_run(ins) as u32;
+            self.IR = self.read_8bits();
+            self.decode_and_run();
         }
     }
 
@@ -125,10 +125,12 @@ impl PP8085 {
     pub fn get_l(&self) -> u8 {self.L}
     pub fn get_sp(&self) -> u16 {self.SP}
     pub fn get_pc(&self) -> u16 {self.PC}
+    pub fn get_ir(&self) -> u8 {self.IR}
     pub fn get_hlt(&self) -> bool {self.HLT}
     
     pub fn reset(&mut self) {
         self.A = 0; self.B = 0; self.C = 0; self.D = 0; self.E = 0; self.H = 0; self.L = 0; self.SP = 0; self.PC = 0; self.F = 0;
+        self.IR = 0;
         self.HLT = false;
         self.cycles = 0;
     }
@@ -491,9 +493,8 @@ impl PP8085 {
         println!("-----------------------------");
     }
 
-    fn decode_and_run(&mut self, opcode: u8) -> u8 {
-        self.IR = opcode;
-        match opcode {
+    fn decode_and_run(&mut self) -> u8 {
+        match self.IR {
             0x00 => self.nop(),
             0x01 => self.lxi_b(),
             0x02 => self.stax_b(),
@@ -740,7 +741,7 @@ impl PP8085 {
             0xFC => self.cm(),
             0xFE => self.cpi(),
             0xFF => self.rst_7(),
-            _ => {panic!("{:#02x} is unimplemented", opcode)}
+            _ => {panic!("{:#02x} is unimplemented", self.IR)}
         }
     }
 

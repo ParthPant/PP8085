@@ -2,7 +2,7 @@ import Status from "./components/status";
 import React from 'react';
 import './App.css'
 // MUI
-import { Slider, ButtonGroup, Button, Paper } from '@mui/material';
+import { Slider, ButtonGroup, Button } from '@mui/material';
 // wasm
 import { Memory, PP8085 } from "pp8085";
 import { Box } from "@mui/system";
@@ -142,8 +142,8 @@ class App extends React.Component<{}, wasm_state>{
   }
 
   handleStep() {
+    this.state.cpu.run_next();
     this.setState((state) => {
-      state.cpu.run_next();
       return state;
     })
   }
@@ -153,9 +153,16 @@ class App extends React.Component<{}, wasm_state>{
       clearInterval(this.run_interval);
       this.run_interval = null;
     }
+    this.state.cpu.reset();
     this.setState((state) => {
-      state.cpu.reset();
-      return state;
+      return {
+          source: state.source,
+          rom: state.rom,
+          cpu: state.cpu,
+          parse_code: state.parse_code,
+          loading: state.loading,
+          running: false,
+      };
     });
   }
 
@@ -181,13 +188,13 @@ class App extends React.Component<{}, wasm_state>{
                   </Box>
 
                   <Box m={3}>
-                    <Button variant="contained" color="primary" onClick={this.handleStep} disabled={this.state.cpu.get_hlt()}>Step</Button>
+                    <Button variant="contained" color="primary" onClick={this.handleStep} disabled={this.run_interval != null || this.state.cpu.get_hlt()}>Step</Button>
                   </Box>
 
                   <Box m={3}>
                     <ButtonGroup variant="outlined">
                       <Button color="success" onClick={this.handleRun} disabled={this.state.cpu.get_hlt() || this.run_interval != null}>Run</Button>
-                      <Button color="secondary" onClick={this.handleStop} disabled={this.state.cpu.get_hlt() || this.state.running}>Pause</Button>
+                      <Button color="secondary" onClick={this.handleStop} disabled={this.state.cpu.get_hlt() || this.run_interval == null}>Pause</Button>
                     </ButtonGroup>
                   </Box>
               </Box>
@@ -201,7 +208,7 @@ class App extends React.Component<{}, wasm_state>{
                     min={0}
                     max={2000}
                     onChange={this.handleSpeed}
-                    disabled={this.state.running}
+                    disabled={this.run_interval != null}
                 />
               </Box>
             </Box>
