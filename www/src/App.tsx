@@ -1,6 +1,10 @@
+import MemTable from "./components/memory";
 import Status from "./components/status";
 import React from 'react';
 import './App.css'
+import AceEditor from 'react-ace'
+import "ace-builds/src-noconflict/theme-github"
+import "ace-builds/src-noconflict/mode-assembly_x86"
 // MUI
 import { Slider, ButtonGroup, Button } from '@mui/material';
 // wasm
@@ -17,7 +21,7 @@ const code = `
 
 interface wasm_state {
     cpu: PP8085,
-    rom: Memory,
+    rom: Uint8Array,
     source: string,
     parse_code: (data:string)=>Uint8Array,
     loading: boolean,
@@ -26,10 +30,11 @@ interface wasm_state {
 
 const mem_size = 1025*8;
 let wasm: typeof import("pp8085");
+let memory: any;
 
 class App extends React.Component<{}, wasm_state>{
   run_interval: NodeJS.Timer | null = null;
-  run_speed: number = 200;
+  run_speed: number = 500;
 
   constructor(props: {}) {
     super(props);
@@ -46,6 +51,7 @@ class App extends React.Component<{}, wasm_state>{
 
   async componentDidMount () {
     wasm = await import('pp8085');
+    memory = await import('pp8085/pp8085_lib_bg.wasm')
     const cpu = wasm.PP8085.new();
     const bin = wasm.parse_wasm(code);
     const rom = wasm.Memory.new_from_js(bin, mem_size);
@@ -53,19 +59,19 @@ class App extends React.Component<{}, wasm_state>{
 
     this.setState({
       cpu: cpu,
-      rom: rom,
+      // rom: mem,
       source: code,
       parse_code: wasm.parse_wasm,
       loading: false,
     });
   }
 
-  handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  handleChange(e: string) {
     this.setState(state => {
       return {
-        source: e.target.value,
+        source: e,
         cpu: state.cpu,
-        rom: state.rom,
+        // rom: state.rom,
         parse_code: state.parse_code,
         loading: state.loading,
       };
@@ -81,10 +87,11 @@ class App extends React.Component<{}, wasm_state>{
       clearInterval(this.run_interval);
       this.run_interval = null;
     }
+    // const mem = this.state.cpu.get_memory_contents();
     this.setState(state => {
       return {
         source: state.source,
-        rom: rom,
+        // rom: mem,
         cpu: state.cpu,
         parse_code: state.parse_code,
         loading: false,
@@ -98,10 +105,12 @@ class App extends React.Component<{}, wasm_state>{
         this.handleStep();
         if (this.state.cpu.get_hlt() && this.run_interval != null) {
           clearInterval(this.run_interval);
+          this.run_interval = null;
+          // const mem = this.state.cpu.get_memory_contents();
           this.setState(state=> {
             return {
               source: state.source,
-              rom: state.rom,
+              // rom: mem,
               cpu: state.cpu,
               parse_code: state.parse_code,
               loading: false,
@@ -111,10 +120,11 @@ class App extends React.Component<{}, wasm_state>{
         }
       }, this.run_speed);
 
+      // const mem = this.state.cpu.get_memory_contents();
       this.setState(state => {
         return {
           source: state.source,
-          rom: state.rom,
+          // rom: mem,
           cpu: state.cpu,
           parse_code: state.parse_code,
           loading: false,
@@ -128,10 +138,11 @@ class App extends React.Component<{}, wasm_state>{
     if (this.run_interval) {
       clearInterval(this.run_interval);
       this.run_interval = null;
+      // const mem = this.state.cpu.get_memory_contents();
       this.setState(state => {
         return {
           source: state.source,
-          rom: state.rom,
+          // rom: mem,
           cpu: state.cpu,
           parse_code: state.parse_code,
           loading: false,
@@ -143,8 +154,16 @@ class App extends React.Component<{}, wasm_state>{
 
   handleStep() {
     this.state.cpu.run_next();
+    // const mem = this.state.cpu.get_memory_contents();
     this.setState((state) => {
-      return state;
+      return {
+        cpu: state.cpu,
+        // rom: mem,
+        source: state.source,
+        parse_code: state.parse_code,
+        loading: state.loading,
+        running: state.running,
+      } 
     })
   }
 
@@ -157,7 +176,7 @@ class App extends React.Component<{}, wasm_state>{
     this.setState((state) => {
       return {
           source: state.source,
-          rom: state.rom,
+          // rom: state.rom,
           cpu: state.cpu,
           parse_code: state.parse_code,
           loading: state.loading,
@@ -176,22 +195,22 @@ class App extends React.Component<{}, wasm_state>{
         <div className="App">
           <Box display="flex" justifyContent="center" alignItems="center">
             <Box display="flex" flexDirection="column" alignItems="center" order={1} p={1} m={2}>
-              <textarea onChange={this.handleChange} defaultValue={code} cols={100} rows={30} style={{resize: 'none'}}></textarea>
+              <AceEditor onChange={this.handleChange} mode="assembly_x86" defaultValue={code} theme="github" style={{resize: 'none'}}/>
 
               <Box display="flex" justifyContent="center" alignItems="center" sx={{p:3, textAlign: "center"}}>
-                  <Box m={3}>
+                  <Box m={2}>
                     <Button variant="contained" onClick={this.handleCompile}>Compile & Load</Button>
                   </Box>
 
-                  <Box m={3}>
+                  <Box m={2}>
                     <Button variant="contained" color="warning" onClick={this.handleReset}>Reset</Button>
                   </Box>
 
-                  <Box m={3}>
+                  <Box m={2}>
                     <Button variant="contained" color="primary" onClick={this.handleStep} disabled={this.run_interval != null || this.state.cpu.get_hlt()}>Step</Button>
                   </Box>
 
-                  <Box m={3}>
+                  <Box m={2}>
                     <ButtonGroup variant="outlined">
                       <Button color="success" onClick={this.handleRun} disabled={this.state.cpu.get_hlt() || this.run_interval != null}>Run</Button>
                       <Button color="secondary" onClick={this.handleStop} disabled={this.state.cpu.get_hlt() || this.run_interval == null}>Pause</Button>
@@ -199,22 +218,26 @@ class App extends React.Component<{}, wasm_state>{
                   </Box>
               </Box>
 
-              <Box display="flex" alignItems="center" m={3} sx={{width: 300}}>
+              <Box display="flex" alignItems="center" sx={{width: 300}}>
                 <Box m={3}>Emulation Speed</Box>
                 <Slider
-                    defaultValue={2000-this.run_speed}
-                    step={100}
-                    marks
-                    min={0}
-                    max={2000}
+                    defaultValue={3000-this.run_speed}
+                    min={200}
+                    max={3000}
+                    valueLabelDisplay="auto"
                     onChange={this.handleSpeed}
                     disabled={this.run_interval != null}
                 />
               </Box>
             </Box>
 
-            <Box order={2} p={1} m={6} alignSelf="flex-start">
-              <Status cpu={this.state.cpu} />
+            <Box order={2} p={1} m={6} alignSelf="flex-start" display="flex" flexDirection="column">
+              <Box m={1}>
+                <Status cpu={this.state.cpu}/>
+              </Box>
+              <Box m={1}>
+                <MemTable ptr={this.state.cpu.get_memory_ptr()} memory={memory.memory} size={mem_size}/>
+              </Box>
             </Box>
           </Box>
         </div>
