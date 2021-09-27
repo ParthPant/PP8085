@@ -1,19 +1,21 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faGithub, faTwitter} from "@fortawesome/free-brands-svg-icons";
-import { Container, Box, Divider, Paper } from "@mui/material";
+import { Container, Box, Divider, Paper, Theme } from "@mui/material";
 import {ReactComponent as ParthLogo} from "../images/parth.svg"
+import {makeStyles} from '@mui/material/styles';
 
 function Footer () {
+
     return (
         <Container component={Paper} elevation={0} sx={{width:"50%"}}>
             <Box display="flex" alignContent="center" justifyContent="space-between">
                 <Box order={1} display="flex">
                     <Box marginY="auto" component="div">
-                        Made with ♥ by
+                        Made with <span style={{color: "red"}}>♥</span> by
                     </Box>
                     <Box>
                         <a href="https://parthpant.github.io" style={{textDecoration: "none", color:"inherit"}}>
-                            <ParthLogo height="6em" width="auto" style={{padding:0, margin:0}}/>
+                            <ParthLogo height="6em" width="auto" style={{padding:0, margin:0}} fill="black"/>
                         </a>
                     </Box>
                 </Box>

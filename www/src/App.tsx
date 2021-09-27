@@ -7,10 +7,11 @@ import AceEditor from 'react-ace'
 import "ace-builds/src-noconflict/theme-github"
 import "ace-builds/src-noconflict/mode-assembly_x86"
 // MUI
-import { Slider, ButtonGroup, Button } from '@mui/material';
+import { Slider, ButtonGroup, Button, CssBaseline, Box } from '@mui/material';
+import {ThemeProvider} from "@emotion/react";
+import { createTheme } from '@mui/material/styles';
 // wasm
 import { Memory, PP8085 } from "pp8085";
-import { Box } from "@mui/system";
 import Header from "./components/header";
 import WarnDialog from "./components/dialog";
 
@@ -31,6 +32,12 @@ interface wasm_state {
     running: boolean,
     warn_open: boolean,
 }
+
+const theme = createTheme({
+  palette: {
+    mode: "light"
+  },
+});
 
 const mem_size = 1025*8;
 let wasm: typeof import("pp8085");
@@ -227,6 +234,9 @@ class App extends React.Component<{}, wasm_state>{
     if (this.state != null) {
       return (
         <div className="App">
+          <ThemeProvider theme={theme}>
+          <CssBaseline>
+            
           <Box display="flex" justifyContent="center" alignItems="center">
             <Box display="flex" flexDirection="column" alignItems="center" order={1} p={1} m={2}>
               <Header/>
@@ -280,6 +290,9 @@ class App extends React.Component<{}, wasm_state>{
           <Footer/>
 
           <WarnDialog handleClose={this.handleWarnClose} open={this.state.warn_open} heading="You Did A BOO.. BOO.." description="There was an error is the assembly code (Check your symbols)"/>
+
+          </CssBaseline>
+          </ThemeProvider>
         </div>
       )
     } else {

@@ -2,6 +2,7 @@
   "name": "www",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://parthpant.github.io/pp8085",
   "dependencies": {
     "@emotion/react": "^11.4.1",
     "@emotion/styled": "^11.3.0",
@@ -32,7 +33,9 @@
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build -b deploy"
   },
   "eslintConfig": {
     "extends": [
@@ -53,6 +56,7 @@
     ]
   },
   "devDependencies": {
-    "@types/muicss": "^0.9.3"
+    "@types/muicss": "^0.9.3",
+    "gh-pages": "^3.2.3"
   }
 }

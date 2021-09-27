@@ -5,7 +5,7 @@ function Header () {
     return (
         <Box sx={{p:0, m:0}} display="flex" justifyContent="start">
             <Box marginY="auto" display="flex" flexDirection="column">
-                <Logo height="10em" width="auto"/>
+                <Logo height="10em" width="auto" fill='black' stroke='black'/>
             </Box>
             <Box marginY="auto" component="h3">Intel 8085<br/>MICROPROCESSOR EMULATOR</Box>
         </Box>
