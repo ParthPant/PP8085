@@ -60,13 +60,13 @@ impl Memory {
         };
         res
     }
-
-    pub fn get_data(&self) -> Vec<u8> {
-        self.data.clone()
-    }
 }
 
 impl Memory {
+    pub fn get_data(&self) -> *const u8 {
+        self.data.as_ptr()
+    }
+
     pub fn new_from(bin: &Vec<u8>, size: usize) -> Memory {
         assert!(bin.len() < size);            
         let mut res = Memory {

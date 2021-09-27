@@ -114,6 +114,10 @@ impl PP8085 {
     pub fn get_summary(&self) -> String {
         self.to_string()
     }
+    
+    pub fn get_memory_ptr(&self) -> *const u8 {
+        self.memory.get_data()
+    }
 
     pub fn get_a(&self) -> u8 {self.A}
     pub fn get_f(&self) -> u8 {self.F}

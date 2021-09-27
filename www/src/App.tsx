@@ -12,6 +12,7 @@ import { Slider, ButtonGroup, Button } from '@mui/material';
 import { Memory, PP8085 } from "pp8085";
 import { Box } from "@mui/system";
 import Header from "./components/header";
+import WarnDialog from "./components/dialog";
 
 const code = `
 ; COMMENT DESCRIPTION
@@ -28,6 +29,7 @@ interface wasm_state {
     parse_code: (data:string)=>Uint8Array,
     loading: boolean,
     running: boolean,
+    warn_open: boolean,
 }
 
 const mem_size = 1025*8;
@@ -49,6 +51,7 @@ class App extends React.Component<{}, wasm_state>{
     this.handleStep = this.handleStep.bind(this);
     this.handleReset = this.handleReset.bind(this);
     this.handleSpeed = this.handleSpeed.bind(this);
+    this.handleWarnClose = this.handleWarnClose.bind(this);
   }
 
   async componentDidMount () {
@@ -81,7 +84,23 @@ class App extends React.Component<{}, wasm_state>{
   }
   
   handleCompile() {
-    const bin = this.state.parse_code(this.state.source);
+    let bin: Uint8Array;
+    try {
+      bin = this.state.parse_code(this.state.source);
+    } catch {
+      this.setState(state=> {
+        return {
+          source: state.source,
+          cpu: state.cpu,
+          // rom: state.rom,
+          parse_code: state.parse_code,
+          loading: state.loading,
+          warn_open: true,
+        }
+      })
+      return;
+    }
+
     const rom = wasm.Memory.new_from_js(bin, mem_size);
     this.state.cpu.load_memory(rom);
     this.state.cpu.reset();
@@ -191,6 +210,19 @@ class App extends React.Component<{}, wasm_state>{
       this.run_speed = 2000 - (value as number);
   }
 
+  handleWarnClose() {
+    this.setState(state=> {
+      return {
+        source: state.source,
+        cpu: state.cpu,
+        // rom: state.rom,
+        parse_code: state.parse_code,
+        loading: state.loading,
+        warn_open: false,
+      }
+    })
+  }
+
   render () {
     if (this.state != null) {
       return (
@@ -246,6 +278,8 @@ class App extends React.Component<{}, wasm_state>{
           </Box>
 
           <Footer/>
+
+          <WarnDialog handleClose={this.handleWarnClose} open={this.state.warn_open} heading="You Did A BOO.. BOO.." description="There was an error is the assembly code (Check your symbols)"/>
         </div>
       )
     } else {

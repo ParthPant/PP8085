@@ -70,7 +70,7 @@ fn lex_line<'a>(line: &'a Vec<&str>) -> Res<Vec<Token>, &'a str> {
     Ok(res)
 }
 
-pub fn assemble(code: &str) -> (Vec<u8>, String) {
+pub fn assemble(code: &str) -> Res<(Vec<u8>, String), &str>{
     let code = code.replace(",", " ");
     let parsed = get_words(&code);
 
@@ -123,7 +123,10 @@ pub fn assemble(code: &str) -> (Vec<u8>, String) {
                     if let Token::Data(d) = &tokens[loc] {
                         val = d.clone() as u16;
                     } else if let Token::Symbol(s) = &tokens[loc] {
-                        val = symbol_table.get(s).unwrap().clone() as u16;
+                        match symbol_table.get(s) {
+                            Some(v) => val = v.clone() as u16,
+                            None => return Err("There is an error in the assembly code"),
+                        }
                     }
 
                     bin.push((val & 0x00ff) as u8);
@@ -142,17 +145,23 @@ pub fn assemble(code: &str) -> (Vec<u8>, String) {
         };
     };
 
-    (bin, listing)
+    Ok((bin, listing))
 }
 
-pub fn parse(filename: &str) -> (Vec<u8>, String) {
-    let file = read_file(filename).unwrap();
-    assemble(&file)
+pub fn parse<'a>(filename: &str) -> Res<(Vec<u8>, String), String> {
+    let file: String = read_file(filename).unwrap();
+    match assemble(&file) {
+        Ok(v) => Ok(v),
+        Err(s) => Err(s.to_string())
+    }
 }
 
 #[wasm_bindgen]
-pub fn parse_wasm(data: &str) -> Vec<u8> {
-    assemble(&data).0
+pub fn parse_wasm(data: &str) -> Res<Vec<u8>, JsValue>{
+    match assemble(&data) {
+        Ok(v) => Ok(v.0),
+        Err(r) => Err(JsValue::from(r)),
+    }
 }
 
 fn get_opcode(ins: &str) -> u8 {
