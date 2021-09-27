@@ -2,7 +2,6 @@ import {useState} from 'react'
 import {Table, TableBody, TableCell, TableRow, TableContainer, Paper, TableHead, TablePagination, TableFooter} from '@mui/material'
 
 function MemTable(props: {memory: any, ptr: number, size: number}) {
-    console.log(props.memory.buffer);
     const d = new Uint8Array(props.memory.buffer, props.ptr, props.size);
     const data = Array.from(d);
 

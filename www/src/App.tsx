@@ -94,7 +94,7 @@ class App extends React.Component<{}, wasm_state>{
     let bin: Uint8Array;
     try {
       bin = this.state.parse_code(this.state.source);
-    } catch {
+    } catch(err) {
       this.setState(state=> {
         return {
           source: state.source,
