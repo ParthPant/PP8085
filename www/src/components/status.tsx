@@ -1,12 +1,11 @@
-import { Table, TableRow, TableContainer, TableCell, TableHead, Paper, TableBody} from '@mui/material'
-
+import { Typography, Table, TableRow, TableContainer, TableCell, TableHead, Paper, TableBody} from '@mui/material'
 import { PP8085 } from "pp8085";
 
 function Status(props: {cpu: PP8085}) {
     if (props.cpu) {
         return (
             <Paper elevation={3} sx={{p: 2}}>
-                <h2>Registers</h2>
+            <Typography variant="h4" align="left">Registers</Typography>
                 <TableContainer>
                     <Table size="small">
                         <TableHead>

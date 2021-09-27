@@ -93,25 +93,31 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), String>{
         };
     };
 
+    // println!("{:?}", tokens);
+
     // Second Pass: generate the rom
     let mut bin: Vec<u8> = Vec::new();
     let mut listing = String::new();
     let mut addr: usize = 0;
-    for (i, token) in tokens.iter().enumerate() {
-        match token {
+    let mut i = 0;
+    while i < tokens.len() {
+        // println!("{}:{:?}", i, tokens[i]);
+        match &tokens[i] {
             Token::Mnemonic(s, n_r, n_o) => {
                 let mut ins: String = s.clone();
                 let mut num_registers: usize = n_r.clone();
-                let mut loc = i+1;
+                // println!("{}:{}", i, ins);
+                i += 1;
                 while num_registers > 0 {
-                    if let Token::Operand(r) = &tokens[loc] {
+                    if let Token::Operand(r) = &tokens[i] {
+                        // println!("{}:{}", i, r);
                         ins.push('_');
                         ins.push_str(r);
                     } else {
-                        return Err(format!("Cannot complete instruction: {:?}", tokens[loc]));
+                        return Err(format!("Cannot complete instruction: {:?}", tokens[i]));
                     }
                     num_registers -= 1;
-                    loc += 1;
+                    i += 1;
                 }
                 bin.push(get_opcode(&ins));
                 listing.push_str(&format!("{:#06x}\t{}", addr, ins));
@@ -119,17 +125,17 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), String>{
                 let num_bytes = *n_o;
 
                 if num_bytes > 0 {
-                    let mut val: u16 = 0;
+                    let val: u16;
 
-                    if let Token::Data(d) = &tokens[loc] {
+                    if let Token::Data(d) = &tokens[i] {
                         val = d.clone() as u16;
-                    } else if let Token::Symbol(s) = &tokens[loc] {
+                    } else if let Token::Symbol(s) = &tokens[i] {
                         match symbol_table.get(s) {
                             Some(v) => val = v.clone() as u16,
-                            None => return Err(format!("Symbol not found: {:?}", tokens[loc])),
+                            None => return Err(format!("Symbol not found: {:?}", tokens[i])),
                         }
                     } else {
-                        return Err(format!("Syntax Error: {:?}", tokens[loc-1]))
+                        return Err(format!("Syntax Error: {:?}", tokens[i-1]))
                     }
 
                     bin.push((val & 0x00ff) as u8);
@@ -139,14 +145,17 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), String>{
                     } else {
                         listing.push_str(&format!(" {:#02x}", val));
                     }
+                    // println!("{}:{:#06x}", i, val);
+                    i += 1;
                 }
 
                 addr += num_bytes + 1;
                 listing.push_str("\n");
             },
-            _  => () // this is error
-        };
-    };
+            Token::Label(_) => i += 1, // we can ignore labels here
+            _  => return Err(format!("Syntax Error at {:?}", tokens[i])) // this is error
+        }
+    }
 
     Ok((bin, listing))
 }

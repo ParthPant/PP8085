@@ -2,9 +2,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faGithub, faTwitter} from "@fortawesome/free-brands-svg-icons";
 import { Container, Box, Divider, Paper, Theme } from "@mui/material";
 import {ReactComponent as ParthLogo} from "../images/parth.svg"
-import {makeStyles} from '@mui/material/styles';
 
-function Footer () {
+function Footer (props: {dark: boolean}) {
+    const {dark} = props;
 
     return (
         <Container component={Paper} elevation={0} sx={{width:"50%"}}>
@@ -15,7 +15,7 @@ function Footer () {
                     </Box>
                     <Box>
                         <a href="https://parthpant.github.io" style={{textDecoration: "none", color:"inherit"}}>
-                            <ParthLogo height="6em" width="auto" style={{padding:0, margin:0}} fill="black"/>
+                            <ParthLogo height="6em" width="auto" style={{padding:0, margin:0}} fill={dark?"white":"black"}/>
                         </a>
                     </Box>
                 </Box>

@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {Table, TableBody, TableCell, TableRow, TableContainer, Paper, TableHead, TablePagination, TableFooter} from '@mui/material'
+import {Typography, Table, TableBody, TableCell, TableRow, TableContainer, Paper, TableHead, TablePagination, TableFooter} from '@mui/material'
 
 function MemTable(props: {memory: any, ptr: number, size: number}) {
     const d = new Uint8Array(props.memory.buffer, props.ptr, props.size);
@@ -28,9 +28,10 @@ function MemTable(props: {memory: any, ptr: number, size: number}) {
 
     return (
         <Paper elevation={3} sx={{p:2}}>
-            <h2>Memory</h2>
-            <p>Showing larger number of rows slows down emulation</p>
-            <TableContainer sx={{ minHeight:300, maxHeight: 300, minWidth: 500 }}>
+            <Typography variant="h4" align="left">Memory</Typography>
+            <Typography variant="subtitle2" align="left">Showing larger number of rows slows down emulation</Typography>
+            <Typography variant="subtitle2" align="left" color="primary" paragraph>Memory is limited to {props.size} bits, accessing outside the range will cause undefined behaviour.</Typography>
+            <TableContainer sx={{ minHeight:300, maxHeight: 300}}>
                 <Table padding="checkbox" stickyHeader size="small">
                     <TableHead>
                         <TableRow>

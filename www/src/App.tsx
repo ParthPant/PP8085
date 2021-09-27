@@ -1,3 +1,5 @@
+import Header from "./components/header";
+import WarnDialog from "./components/dialog";
 import MemTable from "./components/memory";
 import Status from "./components/status";
 import Footer from "./components/footer";
@@ -5,23 +7,20 @@ import React from 'react';
 import './App.css'
 import AceEditor from 'react-ace'
 import "ace-builds/src-noconflict/theme-github"
+import "ace-builds/src-noconflict/theme-dracula"
 import "ace-builds/src-noconflict/mode-assembly_x86"
 // MUI
-import { Slider, ButtonGroup, Button, CssBaseline, Box } from '@mui/material';
+import { IconButton, Slider, ButtonGroup, Button, CssBaseline, Box, Switch } from '@mui/material';
 import {ThemeProvider} from "@emotion/react";
 import { createTheme } from '@mui/material/styles';
 // wasm
-import { Memory, PP8085 } from "pp8085";
-import Header from "./components/header";
-import WarnDialog from "./components/dialog";
+import { PP8085 } from "pp8085";
 
-const code = `
-; COMMENT DESCRIPTION
+const code = `; Count down from 15 to 0
             MVI A, fh
   NEXT:     DCR A
             JNZ NEXT 
-            HLT
-`
+            HLT`
 
 interface wasm_state {
     cpu: PP8085,
@@ -32,12 +31,47 @@ interface wasm_state {
     running: boolean,
     warn_open: boolean,
     warning: string,
+    dark: boolean,
 }
 
-const theme = createTheme({
+const lightTheme = createTheme({
   palette: {
     mode: "light"
   },
+  typography: {
+    fontFamily: [
+      '-apple-system',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+      '"Apple Color Emoji"',
+      '"Segoe UI Emoji"',
+      '"Segoe UI Symbol"',
+    ].join(','),
+  }
+});
+
+const darkTheme = createTheme({
+  palette: {
+    mode: "dark"
+  },
+  typography: {
+    fontFamily: [
+      '-apple-system',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+      '"Apple Color Emoji"',
+      '"Segoe UI Emoji"',
+      '"Segoe UI Symbol"',
+    ].join(','),
+  }
 });
 
 const mem_size = 1024*8;
@@ -60,6 +94,7 @@ class App extends React.Component<{}, wasm_state>{
     this.handleReset = this.handleReset.bind(this);
     this.handleSpeed = this.handleSpeed.bind(this);
     this.handleWarnClose = this.handleWarnClose.bind(this);
+    this.handleTheme = this.handleTheme.bind(this);
   }
 
   async componentDidMount () {
@@ -76,6 +111,7 @@ class App extends React.Component<{}, wasm_state>{
       source: code,
       parse_code: wasm.parse_wasm,
       loading: false,
+      dark: true,
     });
   }
 
@@ -232,18 +268,32 @@ class App extends React.Component<{}, wasm_state>{
     })
   }
 
+  handleTheme() {
+    this.setState(state => {
+      return {
+        source: state.source,
+        cpu: state.cpu,
+        // rom: state.rom,
+        parse_code: state.parse_code,
+        loading: state.loading,
+        warn_open: state.warn_open,
+        dark: !state.dark,
+      }
+    })
+  }
+
   render () {
     if (this.state != null) {
       return (
         <div className="App">
-          <ThemeProvider theme={theme}>
+          <ThemeProvider theme={this.state.dark ? darkTheme : lightTheme}>
           <CssBaseline>
             
           <Box display="flex" justifyContent="center" alignItems="center">
             <Box display="flex" flexDirection="column" alignItems="center" order={1} p={1} m={2}>
-              <Header/>
+              <Header dark={this.state.dark}/>
 
-              <AceEditor onChange={this.handleChange} mode="assembly_x86" defaultValue={code} theme="github" style={{resize: 'none'}}/>
+              <AceEditor onChange={this.handleChange} mode="assembly_x86" defaultValue={code} theme={this.state.dark?"dracula":"github"} style={{resize: 'none'}}/>
 
               <Box display="flex" justifyContent="center" alignItems="center" sx={{p:3, textAlign: "center"}}>
                   <Box m={2}>
@@ -266,7 +316,15 @@ class App extends React.Component<{}, wasm_state>{
                   </Box>
               </Box>
 
-              <Box display="flex" alignItems="center" sx={{width: 300}}>
+              <Box display="flex" alignItems="center" sx={{width: "100%"}}>
+                {/* <Switch onChange={this.handleTheme} checked={this.state.dark}/> */}
+                <IconButton onClick={this.handleTheme}>
+                  <img
+                    style={this.state.dark ? { filter: 'invert(1)' } : undefined}
+                    src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAABmJLR0QA/wD/AP+gvaeTAAABkklEQVRIie3WvUodQRQH8J969YIiBlIJPoEPoA8gWAliYgLiLbXyo/Gjip0vYGGRh0hhSBVI0kUuhiRdqkQtRFBQxMpbpdgRr+Dunf0AQfzDYWd35/z/M2fOmRmeEY+JYIVQKyH8Njy/FHHuLiFcClnCPRXwp3KkCddwjkYGaStYGho4U2A5G7jJEB8KVsQ3Wnw2h8+bsqLtRPOhXcMivknCeIavWHAX0vmYgXblGMAwPuIldnEQvo9hSZIT0zjNwdkRdfzEHvof+N8fBvUDfVUKr+Bfimi7+JFk9pWhibWIfhvYjyFsr7FJvG57b+EdrjDqbk2zcICt0B7Ctvuh/4DP5Nsy8yRiZWhiPaLfpshQx2IVh7KTawDHWK5SuI7fkpJ5SHwAn/BLZDnlWbeRQP5CsoE0g/+4pIQuMIWTHJyZeIW50K5Lanof18G+S8J7O9M5zJQVLXJIzKroZEojGAxWxDcVvbjs4LgTLA2NwNGbV7xTdr4PVogja+fKutbEIpXj0W6ZZW6SLfzB34rG8sTxHxQCSoItZf48AAAAAElFTkSuQmCC'
+                    alt='change theme icon'
+                  />
+                </IconButton>
                 <Box m={3}>Emulation Speed</Box>
                 <Slider
                     defaultValue={3000-this.run_speed}
@@ -279,7 +337,7 @@ class App extends React.Component<{}, wasm_state>{
               </Box>
             </Box>
 
-            <Box order={2} p={1} m={6} alignSelf="flex-start" display="flex" flexDirection="column">
+            <Box order={2} p={1} m={6} alignSelf="flex-start" display="flex" flexDirection="column" sx={{minWidth: 500, maxWidth: 600}}>
               <Box m={1}>
                 <Status cpu={this.state.cpu}/>
               </Box>
@@ -289,7 +347,7 @@ class App extends React.Component<{}, wasm_state>{
             </Box>
           </Box>
 
-          <Footer/>
+          <Footer dark={this.state.dark}/>
 
           <WarnDialog handleClose={this.handleWarnClose} open={this.state.warn_open} heading="Opps Did A BOO.. BOO.." description={this.state.warning}/>
 

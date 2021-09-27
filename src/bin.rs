@@ -8,6 +8,6 @@ fn main() {
     let rom = Memory::new_from(&bin1, 1024*8);
     let mut cpu = PP8085::new();
     cpu.load_memory(rom);
-    cpu.run();
-    cpu.display();
+    // cpu.run();
+    // cpu.display();
 }
