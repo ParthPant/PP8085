@@ -1,5 +1,6 @@
 import MemTable from "./components/memory";
 import Status from "./components/status";
+import Footer from "./components/footer";
 import React from 'react';
 import './App.css'
 import AceEditor from 'react-ace'
@@ -10,6 +11,7 @@ import { Slider, ButtonGroup, Button } from '@mui/material';
 // wasm
 import { Memory, PP8085 } from "pp8085";
 import { Box } from "@mui/system";
+import Header from "./components/header";
 
 const code = `
 ; COMMENT DESCRIPTION
@@ -195,6 +197,8 @@ class App extends React.Component<{}, wasm_state>{
         <div className="App">
           <Box display="flex" justifyContent="center" alignItems="center">
             <Box display="flex" flexDirection="column" alignItems="center" order={1} p={1} m={2}>
+              <Header/>
+
               <AceEditor onChange={this.handleChange} mode="assembly_x86" defaultValue={code} theme="github" style={{resize: 'none'}}/>
 
               <Box display="flex" justifyContent="center" alignItems="center" sx={{p:3, textAlign: "center"}}>
@@ -240,6 +244,8 @@ class App extends React.Component<{}, wasm_state>{
               </Box>
             </Box>
           </Box>
+
+          <Footer/>
         </div>
       )
     } else {
