@@ -31,6 +31,7 @@ interface wasm_state {
     loading: boolean,
     running: boolean,
     warn_open: boolean,
+    warning: string,
 }
 
 const theme = createTheme({
@@ -39,7 +40,7 @@ const theme = createTheme({
   },
 });
 
-const mem_size = 1025*8;
+const mem_size = 1024*8;
 let wasm: typeof import("pp8085");
 let memory: any;
 
@@ -103,6 +104,7 @@ class App extends React.Component<{}, wasm_state>{
           parse_code: state.parse_code,
           loading: state.loading,
           warn_open: true,
+          warning: err as string
         }
       })
       return;
@@ -254,7 +256,7 @@ class App extends React.Component<{}, wasm_state>{
 
                   <Box m={2}>
                     <Button variant="contained" color="primary" onClick={this.handleStep} disabled={this.run_interval != null || this.state.cpu.get_hlt()}>Step</Button>
-                  </Box>
+                   </Box>
 
                   <Box m={2}>
                     <ButtonGroup variant="outlined">
@@ -289,7 +291,7 @@ class App extends React.Component<{}, wasm_state>{
 
           <Footer/>
 
-          <WarnDialog handleClose={this.handleWarnClose} open={this.state.warn_open} heading="You Did A BOO.. BOO.." description="There was an error is the assembly code (Check your symbols)"/>
+          <WarnDialog handleClose={this.handleWarnClose} open={this.state.warn_open} heading="Opps Did A BOO.. BOO.." description={this.state.warning}/>
 
           </CssBaseline>
           </ThemeProvider>

@@ -22,6 +22,10 @@ function MemTable(props: {memory: any, ptr: number, size: number}) {
         setPage(0);
     };
 
+    const defaultLabelDisplayedRows = ({ from, to, count }: {from: number, to:number, count: number}) => { 
+        return `${from}-${to} of ${count != -1 ? count : `${props.size}`}`;
+    }
+
     return (
         <Paper elevation={3} sx={{p:2}}>
             <h2>Memory</h2>
@@ -46,11 +50,12 @@ function MemTable(props: {memory: any, ptr: number, size: number}) {
                         <TableRow>
                             <TablePagination
                             component="div"
-                            count={100}
+                            count={-1}
                             page={page}
                             onPageChange={handleChangePage}
                             rowsPerPage={rowsPerPage}
                             onRowsPerPageChange={handleChangeRowsPerPage}
+                            labelDisplayedRows={defaultLabelDisplayedRows}
                             rowsPerPageOptions={[10, 50, 100, 256]}
                             />
                         </TableRow>
