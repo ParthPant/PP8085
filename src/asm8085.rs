@@ -70,7 +70,7 @@ fn lex_line<'a>(line: &'a Vec<&str>) -> Res<Vec<Token>, &'a str> {
     Ok(res)
 }
 
-pub fn assemble(code: &str) -> Res<(Vec<u8>, String), &str>{
+pub fn assemble(code: &str) -> Res<(Vec<u8>, String), String>{
     let code = code.replace(",", " ");
     let parsed = get_words(&code);
 
@@ -78,7 +78,7 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), &str>{
     for line in parsed.iter() {
         match lex_line(line) {
             Ok(mut l) => tokens.append(&mut l),
-            Err(e) => panic!("{}",e),
+            Err(e) => return Err(format!("Syntax error at {}", e)), // this would never happen
         }
     }
 
@@ -108,7 +108,7 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), &str>{
                         ins.push('_');
                         ins.push_str(r);
                     } else {
-                        panic!("{}: cannot complete instruction {}", i, ins)
+                        return Err(format!("Cannot complete instruction: {:?}", tokens[loc]));
                     }
                     num_registers -= 1;
                     loc += 1;
@@ -117,16 +117,19 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), &str>{
                 listing.push_str(&format!("{:#06x}\t{}", addr, ins));
 
                 let num_bytes = *n_o;
-                let mut val: u16 = 0;
 
                 if num_bytes > 0 {
+                    let mut val: u16 = 0;
+
                     if let Token::Data(d) = &tokens[loc] {
                         val = d.clone() as u16;
                     } else if let Token::Symbol(s) = &tokens[loc] {
                         match symbol_table.get(s) {
                             Some(v) => val = v.clone() as u16,
-                            None => return Err("There is an error in the assembly code"),
+                            None => return Err(format!("Symbol not found: {:?}", tokens[loc])),
                         }
+                    } else {
+                        return Err(format!("Syntax Error: {:?}", tokens[loc-1]))
                     }
 
                     bin.push((val & 0x00ff) as u8);
@@ -141,7 +144,7 @@ pub fn assemble(code: &str) -> Res<(Vec<u8>, String), &str>{
                 addr += num_bytes + 1;
                 listing.push_str("\n");
             },
-            _  => ()
+            _  => () // this is error
         };
     };
 
@@ -378,7 +381,7 @@ fn get_opcode(ins: &str) -> u8 {
         "rst_2"    => 0xD7,
         "rc"       => 0xD8,
         "jc"       => 0xDA,
-        "i_n"      => 0xDB,
+        "in"      => 0xDB,
         "cc"       => 0xDC,
         "sbi"      => 0xDE,
         "rst_3"    => 0xDF,
@@ -416,7 +419,7 @@ fn get_opcode(ins: &str) -> u8 {
     }
 }
 
-fn tokenize(word: &str) -> Option<Token> {
+fn tokenize(word: &str) -> Option<Token> { // never returns NONE since this is only the 1st pass
     let word = word.to_lowercase();
     if word.contains(':') {
         let temp = word.trim_end_matches(':').to_string();

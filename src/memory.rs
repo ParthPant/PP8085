@@ -25,7 +25,7 @@ impl Memory {
         if addr < self.size {
             self.data[addr as usize] = content;
         } else {
-            panic!("Memory overflow {:#02x}/{:#02x}", addr, self.size);
+            // panic!("Memory overflow {:#02x}/{:#02x}", addr, self.size);
         }
     }
 
@@ -34,8 +34,10 @@ impl Memory {
     pub fn read(&self, addr: u16) -> u8 {
         if addr < self.size {
             return self.data[addr as usize];
-        } else {
-            panic!("Memory overflow");
+        } 
+        else {
+            // panic!("Memory overflow");
+            return 0;
         }
     }
 
