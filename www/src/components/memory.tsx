@@ -23,7 +23,7 @@ function MemTable(props: {memory: any, ptr: number, size: number}) {
     };
 
     const defaultLabelDisplayedRows = ({ from, to, count }: {from: number, to:number, count: number}) => { 
-        return `${from}-${to} of ${count != -1 ? count : `${props.size}`}`;
+        return `${from}-${to} of ${count !== -1 ? count : `${props.size}`}`;
     }
 
     return (

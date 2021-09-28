@@ -1,12 +1,11 @@
-use wasm_bindgen::prelude::*;
+use serde::{Serialize, Deserialize};
 
-#[wasm_bindgen]
+#[derive(Serialize, Deserialize)]
 pub struct IoPort {
     addr: u8,
     data: u8,
 }
 
-#[wasm_bindgen]
 impl IoPort {
     pub fn new(addr: u8) -> IoPort {
         IoPort {

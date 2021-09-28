@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLinkedin, faGithub, faTwitter} from "@fortawesome/free-brands-svg-icons";
-import { Container, Box, Divider, Paper, Theme } from "@mui/material";
+import { Container, Box, Paper } from "@mui/material";
 import {ReactComponent as ParthLogo} from "../images/parth.svg"
 
 function Footer (props: {dark: boolean}) {

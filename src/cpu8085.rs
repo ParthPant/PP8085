@@ -23,7 +23,7 @@ pub struct PP8085 {
     SP:u16, // Stack Pointer
 
     memory: Memory,
-    io_ports: HashMap<u8, Box<IoPort>>,
+    io_ports: HashMap<u8, IoPort>,
 
     cycles: u32,
     IE: bool,  // Interrupt enable
@@ -87,7 +87,7 @@ impl PP8085 {
     }
 
     pub fn add_io_port(&mut self, addr: u8) {
-        self.io_ports.insert(addr, Box::new(IoPort::new(addr)));
+        self.io_ports.insert(addr, IoPort::new(addr));
     }
 
     pub fn remove_io_port(&mut self, addr: u8) {
@@ -117,6 +117,10 @@ impl PP8085 {
     
     pub fn get_memory_ptr(&self) -> *const u8 {
         self.memory.get_data()
+    }
+
+    pub fn get_io_ports(&self) -> JsValue {
+        JsValue::from_serde(&self.io_ports).unwrap()
     }
 
     pub fn get_a(&self) -> u8 {self.A}

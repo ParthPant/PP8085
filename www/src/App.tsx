@@ -10,11 +10,12 @@ import "ace-builds/src-noconflict/theme-github"
 import "ace-builds/src-noconflict/theme-dracula"
 import "ace-builds/src-noconflict/mode-assembly_x86"
 // MUI
-import { IconButton, Slider, ButtonGroup, Button, CssBaseline, Box, Switch } from '@mui/material';
+import { Typography, IconButton, Slider, ButtonGroup, Button, CssBaseline, Box, Divider } from '@mui/material';
 import {ThemeProvider} from "@emotion/react";
 import { createTheme } from '@mui/material/styles';
 // wasm
 import { PP8085 } from "pp8085";
+import IoPorts from "./components/ioports";
 
 const code = `; Count down from 15 to 0
             MVI A, fh
@@ -95,6 +96,9 @@ class App extends React.Component<{}, wasm_state>{
     this.handleSpeed = this.handleSpeed.bind(this);
     this.handleWarnClose = this.handleWarnClose.bind(this);
     this.handleTheme = this.handleTheme.bind(this);
+    this.handleIoEdit = this.handleIoEdit.bind(this);
+    this.handleIOAdd = this.handleIOAdd.bind(this);
+    this.handleIORemove = this.handleIORemove.bind(this);
   }
 
   async componentDidMount () {
@@ -112,6 +116,7 @@ class App extends React.Component<{}, wasm_state>{
       parse_code: wasm.parse_wasm,
       loading: false,
       dark: true,
+      warn_open: false,
     });
   }
 
@@ -282,6 +287,23 @@ class App extends React.Component<{}, wasm_state>{
     })
   }
 
+  handleIoEdit(addr: number, data: number) {
+    this.state.cpu.write_io(addr, data);
+    this.setState(state=>state);
+  }
+
+  handleIOAdd(addr:number) {
+    if (addr <= 0xff) {
+      this.state.cpu.add_io_port(addr);
+      this.setState(state=>state);
+    }
+  }
+
+  handleIORemove(addr:number) {
+    this.state.cpu.remove_io_port(addr);
+    this.setState(state=>state);
+  }
+
   render () {
     if (this.state != null) {
       return (
@@ -290,7 +312,7 @@ class App extends React.Component<{}, wasm_state>{
           <CssBaseline>
             
           <Box display="flex" justifyContent="center" alignItems="center">
-            <Box display="flex" flexDirection="column" alignItems="center" order={1} p={1} m={2}>
+            <Box display="flex" flexDirection="column" alignItems="center" order={1} p={1} m={2} alignSelf="flex-start">
               <Header dark={this.state.dark}/>
 
               <AceEditor onChange={this.handleChange} mode="assembly_x86" defaultValue={code} theme={this.state.dark?"dracula":"github"} style={{resize: 'none'}}/>
@@ -317,7 +339,6 @@ class App extends React.Component<{}, wasm_state>{
               </Box>
 
               <Box display="flex" alignItems="center" sx={{width: "100%"}}>
-                {/* <Switch onChange={this.handleTheme} checked={this.state.dark}/> */}
                 <IconButton onClick={this.handleTheme}>
                   <img
                     style={this.state.dark ? { filter: 'invert(1)' } : undefined}
@@ -325,7 +346,8 @@ class App extends React.Component<{}, wasm_state>{
                     alt='change theme icon'
                   />
                 </IconButton>
-                <Box m={3}>Emulation Speed</Box>
+                <Divider orientation="vertical" flexItem variant="middle"/>
+                <Typography m={3}>Emulation Speed</Typography>
                 <Slider
                     defaultValue={3000-this.run_speed}
                     min={200}
@@ -343,6 +365,9 @@ class App extends React.Component<{}, wasm_state>{
               </Box>
               <Box m={1}>
                 <MemTable ptr={this.state.cpu.get_memory_ptr()} memory={memory.memory} size={mem_size}/>
+              </Box>
+              <Box m={1}>
+                <IoPorts handleEdit={this.handleIoEdit} handleAdd={this.handleIOAdd} handleRemove={this.handleIORemove} ports={this.state.cpu.get_io_ports()}/>
               </Box>
             </Box>
           </Box>
