@@ -9,10 +9,12 @@ function Status(props: {cpu: PP8085}) {
                 <TableContainer>
                     <Table size="small">
                         <TableHead>
-                            <TableCell>Register</TableCell>
-                            <TableCell>Contents</TableCell>
-                            <TableCell>Register</TableCell>
-                            <TableCell>Contents</TableCell>
+                            <TableRow>
+                                <TableCell>Register</TableCell>
+                                <TableCell>Contents</TableCell>
+                                <TableCell>Register</TableCell>
+                                <TableCell>Contents</TableCell>
+                            </TableRow>
                         </TableHead>
                         <TableBody>
                             <TableRow>

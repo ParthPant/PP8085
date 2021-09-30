@@ -41,7 +41,7 @@ function MemTable(props: {memory: any, ptr: number, size: number}) {
                     </TableHead>
                     <TableBody>
                         {data.slice(page*rowsPerPage, page*rowsPerPage+rowsPerPage).map((n, i:number) => (
-                            <TableRow>
+                            <TableRow key={page*rowsPerPage+i}>
                                 <TableCell>{(page*rowsPerPage+i).toString(16).toUpperCase()}</TableCell>
                                 <TableCell>{n.toString(16).toUpperCase()}</TableCell>
                             </TableRow>

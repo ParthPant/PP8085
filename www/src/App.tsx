@@ -25,33 +25,33 @@ const code = `; Count down from 15 to 0
 
 interface wasm_state {
     cpu: PP8085,
-    rom: Uint8Array,
     source: string,
     parse_code: (data:string)=>Uint8Array,
     loading: boolean,
-    running: boolean,
     warn_open: boolean,
     warning: string,
     dark: boolean,
 }
+
+const fonts = [
+    '-apple-system',
+    'BlinkMacSystemFont',
+    '"Segoe UI"',
+    'Roboto',
+    '"Helvetica Neue"',
+    'Arial',
+    'sans-serif',
+    '"Apple Color Emoji"',
+    '"Segoe UI Emoji"',
+    '"Segoe UI Symbol"',
+  ].join(',')
 
 const lightTheme = createTheme({
   palette: {
     mode: "light"
   },
   typography: {
-    fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
-    ].join(','),
+    fontFamily: fonts
   }
 });
 
@@ -60,18 +60,7 @@ const darkTheme = createTheme({
     mode: "dark"
   },
   typography: {
-    fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
-    ].join(','),
+    fontFamily: fonts 
   }
 });
 
@@ -89,7 +78,7 @@ class App extends React.Component<{}, wasm_state>{
 
     this.handleChange = this.handleChange.bind(this);
     this.handleRun = this.handleRun.bind(this);
-    this.handleStop = this.handleStop.bind(this);
+    this.handlePause = this.handlePause.bind(this);
     this.handleCompile = this.handleCompile.bind(this);
     this.handleStep = this.handleStep.bind(this);
     this.handleReset = this.handleReset.bind(this);
@@ -111,7 +100,6 @@ class App extends React.Component<{}, wasm_state>{
 
     this.setState({
       cpu: cpu,
-      // rom: mem,
       source: code,
       parse_code: wasm.parse_wasm,
       loading: false,
@@ -124,10 +112,6 @@ class App extends React.Component<{}, wasm_state>{
     this.setState(state => {
       return {
         source: e,
-        cpu: state.cpu,
-        // rom: state.rom,
-        parse_code: state.parse_code,
-        loading: state.loading,
       };
     });
   }
@@ -139,11 +123,6 @@ class App extends React.Component<{}, wasm_state>{
     } catch(err) {
       this.setState(state=> {
         return {
-          source: state.source,
-          cpu: state.cpu,
-          // rom: state.rom,
-          parse_code: state.parse_code,
-          loading: state.loading,
           warn_open: true,
           warning: err as string
         }
@@ -158,16 +137,7 @@ class App extends React.Component<{}, wasm_state>{
       clearInterval(this.run_interval);
       this.run_interval = null;
     }
-    // const mem = this.state.cpu.get_memory_contents();
-    this.setState(state => {
-      return {
-        source: state.source,
-        // rom: mem,
-        cpu: state.cpu,
-        parse_code: state.parse_code,
-        loading: false,
-      };
-    });
+    this.setState(state => state);
   }
 
   handleRun() {
@@ -177,65 +147,24 @@ class App extends React.Component<{}, wasm_state>{
         if (this.state.cpu.get_hlt() && this.run_interval != null) {
           clearInterval(this.run_interval);
           this.run_interval = null;
-          // const mem = this.state.cpu.get_memory_contents();
-          this.setState(state=> {
-            return {
-              source: state.source,
-              // rom: mem,
-              cpu: state.cpu,
-              parse_code: state.parse_code,
-              loading: false,
-              running: false,
-            };
-          });
+          this.setState(state => state);
         }
       }, this.run_speed);
-
-      // const mem = this.state.cpu.get_memory_contents();
-      this.setState(state => {
-        return {
-          source: state.source,
-          // rom: mem,
-          cpu: state.cpu,
-          parse_code: state.parse_code,
-          loading: false,
-          running: true,
-        };
-      });
+      this.setState(state => state);
     }
   }
 
-  handleStop() {
+  handlePause() {
     if (this.run_interval) {
       clearInterval(this.run_interval);
       this.run_interval = null;
-      // const mem = this.state.cpu.get_memory_contents();
-      this.setState(state => {
-        return {
-          source: state.source,
-          // rom: mem,
-          cpu: state.cpu,
-          parse_code: state.parse_code,
-          loading: false,
-          running: false,
-        };
-      });
+      this.setState(state => state);
     }
   }
 
   handleStep() {
     this.state.cpu.run_next();
-    // const mem = this.state.cpu.get_memory_contents();
-    this.setState((state) => {
-      return {
-        cpu: state.cpu,
-        // rom: mem,
-        source: state.source,
-        parse_code: state.parse_code,
-        loading: state.loading,
-        running: state.running,
-      } 
-    })
+    this.setState(state => state);
   }
 
   handleReset() {
@@ -244,16 +173,7 @@ class App extends React.Component<{}, wasm_state>{
       this.run_interval = null;
     }
     this.state.cpu.reset();
-    this.setState((state) => {
-      return {
-          source: state.source,
-          // rom: state.rom,
-          cpu: state.cpu,
-          parse_code: state.parse_code,
-          loading: state.loading,
-          running: false,
-      };
-    });
+    this.setState(state => state);
   }
 
   handleSpeed(e: Event, value: number | Array<number>, activeThumb: number) {
@@ -263,11 +183,6 @@ class App extends React.Component<{}, wasm_state>{
   handleWarnClose() {
     this.setState(state=> {
       return {
-        source: state.source,
-        cpu: state.cpu,
-        // rom: state.rom,
-        parse_code: state.parse_code,
-        loading: state.loading,
         warn_open: false,
       }
     })
@@ -276,12 +191,6 @@ class App extends React.Component<{}, wasm_state>{
   handleTheme() {
     this.setState(state => {
       return {
-        source: state.source,
-        cpu: state.cpu,
-        // rom: state.rom,
-        parse_code: state.parse_code,
-        loading: state.loading,
-        warn_open: state.warn_open,
         dark: !state.dark,
       }
     })
@@ -333,7 +242,7 @@ class App extends React.Component<{}, wasm_state>{
                   <Box m={2}>
                     <ButtonGroup variant="outlined">
                       <Button color="success" onClick={this.handleRun} disabled={this.state.cpu.get_hlt() || this.run_interval != null}>Run</Button>
-                      <Button color="secondary" onClick={this.handleStop} disabled={this.state.cpu.get_hlt() || this.run_interval == null}>Pause</Button>
+                      <Button color="secondary" onClick={this.handlePause} disabled={this.state.cpu.get_hlt() || this.run_interval == null}>Pause</Button>
                     </ButtonGroup>
                   </Box>
               </Box>
