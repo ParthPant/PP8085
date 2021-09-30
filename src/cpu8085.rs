@@ -754,20 +754,10 @@ impl PP8085 {
     }
 
     fn write_memory(&mut self, addr: u16, content: u8) {
-        // if let Some(m) = &mut self.memory {
-            // m.write(addr, content);
-        // } else {
-        //     panic!("Memory is not connected");
-        // }
         self.memory.write(addr, content);
     }
 
     pub fn read_memory(&mut self, addr: u16) -> u8 {
-        // if let Some(m) = &self.memory {
-        //     m.read(addr)
-        // } else {
-        //     panic!("Memory is not connected");
-        // }
         self.memory.read(addr)
     }
 

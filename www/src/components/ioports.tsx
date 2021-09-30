@@ -15,7 +15,7 @@ function IoPorts (props: {ports: any, handleEdit: (addr: number, data:number) =>
     const [addopen, setAddOpen] = useState<boolean>(false);
     const [removeopen, setRemoveOpen] = useState<boolean>(false);
 
-    Object.entries(ports).map(([key, value])=>
+    Object.entries(ports).map(([_key, value])=>
       {
         rows.push({id: (value as port).addr, addr: '0x'+(value as port).addr.toString(16), data: '0x'+(value as port).data.toString(16)});
         return null;
@@ -25,7 +25,7 @@ function IoPorts (props: {ports: any, handleEdit: (addr: number, data:number) =>
     const columns: GridColDef[] = [{ field: 'addr', headerName: 'Address', width: 180, editable: false },
     { field: 'data', headerName: 'Data', width: 180, editable: true}];
 
-    const handleChange = (params: GridCellEditCommitParams, event: MuiEvent<React.SyntheticEvent<Element, Event>>, details: GridCallbackDetails) => {
+    const handleChange = (params: GridCellEditCommitParams, _event: MuiEvent<React.SyntheticEvent<Element, Event>>, _details: GridCallbackDetails) => {
       handleEdit(params.id as number, params.value as number);
     }
 
@@ -61,4 +61,4 @@ function IoPorts (props: {ports: any, handleEdit: (addr: number, data:number) =>
     )
 }
 
-export default IoPorts;
+export default IoPorts

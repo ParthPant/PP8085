@@ -9,7 +9,7 @@ function MemTable(props: {memory: any, ptr: number, size: number}) {
     const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
     const handleChangePage = (
-        event: React.MouseEvent<HTMLButtonElement> | null,
+        _event: React.MouseEvent<HTMLButtonElement> | null,
         newPage: number,
     ) => {
         setPage(newPage);

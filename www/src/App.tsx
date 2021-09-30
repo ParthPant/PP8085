@@ -103,7 +103,7 @@ class App extends React.Component<{}, wasm_state>{
       source: code,
       parse_code: wasm.parse_wasm,
       loading: false,
-      dark: true,
+      dark: false,
       warn_open: false,
     });
   }
@@ -111,6 +111,7 @@ class App extends React.Component<{}, wasm_state>{
   handleChange(e: string) {
     this.setState(state => {
       return {
+        ...state,
         source: e,
       };
     });
@@ -123,6 +124,7 @@ class App extends React.Component<{}, wasm_state>{
     } catch(err) {
       this.setState(state=> {
         return {
+          ...state,
           warn_open: true,
           warning: err as string
         }
@@ -176,13 +178,14 @@ class App extends React.Component<{}, wasm_state>{
     this.setState(state => state);
   }
 
-  handleSpeed(e: Event, value: number | Array<number>, activeThumb: number) {
+  handleSpeed(_e: Event, value: number | Array<number>, _activeThumb: number) {
       this.run_speed = 2000 - (value as number);
   }
 
   handleWarnClose() {
     this.setState(state=> {
       return {
+        ...state,
         warn_open: false,
       }
     })
