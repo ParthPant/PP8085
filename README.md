@@ -1,5 +1,6 @@
 ![plot](./8085.png)
 
+![tests](https://github.com/ParthPant/PP8085/actions/workflows/rust.yml/badge.svg)
 # PP8085
 
 **PP808** is a program that emulates the Intel 8085 Microprocessor architecure. The library is written in Rust and aims to mirror the operation of the
