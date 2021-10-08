@@ -1,8 +1,8 @@
 #![allow(dead_code)]
-pub mod cpu8085;
-pub mod memory;
-pub mod ioport;
 pub mod asm8085;
+pub mod cpu8085;
+pub mod ioport;
+pub mod memory;
 
 cfg_if::cfg_if! {
     // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global

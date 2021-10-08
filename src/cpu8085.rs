@@ -1,5 +1,5 @@
-use super::memory::Memory;
 use super::ioport::IoPort;
+use super::memory::Memory;
 use std::collections::HashMap;
 use std::fmt;
 use wasm_bindgen::prelude::*;
@@ -7,10 +7,10 @@ use wasm_bindgen::prelude::*;
 #[allow(non_snake_case)]
 #[wasm_bindgen]
 pub struct PP8085 {
-    IR:u8, // Instruction Register
-    A: u8, // Accumulator
-    F: u8, // Process Status Register
-    
+    IR: u8, // Instruction Register
+    A: u8,  // Accumulator
+    F: u8,  // Process Status Register
+
     // Registers
     B: u8,
     C: u8,
@@ -19,8 +19,8 @@ pub struct PP8085 {
     H: u8,
     L: u8,
 
-    PC:u16, // Program Counter Register
-    SP:u16, // Stack Pointer
+    PC: u16, // Program Counter Register
+    SP: u16, // Stack Pointer
 
     memory: Memory,
     io_ports: HashMap<u8, IoPort>,
@@ -32,8 +32,11 @@ pub struct PP8085 {
 
 impl fmt::Display for PP8085 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "A:{}\tF:{}\nB:{}\tC:{}\nD:{}\tE:{}\nH:{}\tL:{}\nPC:{}\tSP{}\n",
-        self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L, self.PC, self.SP)
+        write!(
+            f,
+            "A:{}\tF:{}\nB:{}\tC:{}\nD:{}\tE:{}\nH:{}\tL:{}\nPC:{}\tSP{}\n",
+            self.A, self.F, self.B, self.C, self.D, self.E, self.H, self.L, self.PC, self.SP
+        )
     }
 }
 
@@ -43,7 +46,7 @@ impl PP8085 {
     pub fn new() -> PP8085 {
         console_error_panic_hook::set_once();
         PP8085 {
-            IR:0,  // Instruction Register
+            IR: 0, // Instruction Register
             A: 0,  // Accumulator
             F: 0,  // Process Status Register
 
@@ -55,8 +58,8 @@ impl PP8085 {
             H: 0,
             L: 0,
 
-            PC:0,  // Program Counter Register
-            SP:0, // Stack Pointer
+            PC: 0, // Program Counter Register
+            SP: 0, // Stack Pointer
 
             memory: Memory::new(8192),
             io_ports: HashMap::new(),
@@ -78,7 +81,7 @@ impl PP8085 {
         }
     }
 
-    /// execute one instruction and stop with no regard to cycles 
+    /// execute one instruction and stop with no regard to cycles
     pub fn run_next(&mut self) {
         if !self.HLT {
             self.IR = self.read_8bits();
@@ -114,7 +117,7 @@ impl PP8085 {
     pub fn get_summary(&self) -> String {
         self.to_string()
     }
-    
+
     pub fn get_memory_ptr(&self) -> *const u8 {
         self.memory.get_data()
     }
@@ -123,48 +126,81 @@ impl PP8085 {
         JsValue::from_serde(&self.io_ports).unwrap()
     }
 
-    pub fn get_a(&self) -> u8 {self.A}
-    pub fn get_f(&self) -> u8 {self.F}
-    pub fn get_b(&self) -> u8 {self.B}
-    pub fn get_c(&self) -> u8 {self.C}
-    pub fn get_d(&self) -> u8 {self.D}
-    pub fn get_e(&self) -> u8 {self.E}
-    pub fn get_h(&self) -> u8 {self.H}
-    pub fn get_l(&self) -> u8 {self.L}
-    pub fn get_sp(&self) -> u16 {self.SP}
-    pub fn get_pc(&self) -> u16 {self.PC}
-    pub fn get_ir(&self) -> u8 {self.IR}
-    pub fn get_hlt(&self) -> bool {self.HLT}
-    
+    pub fn get_a(&self) -> u8 {
+        self.A
+    }
+    pub fn get_f(&self) -> u8 {
+        self.F
+    }
+    pub fn get_b(&self) -> u8 {
+        self.B
+    }
+    pub fn get_c(&self) -> u8 {
+        self.C
+    }
+    pub fn get_d(&self) -> u8 {
+        self.D
+    }
+    pub fn get_e(&self) -> u8 {
+        self.E
+    }
+    pub fn get_h(&self) -> u8 {
+        self.H
+    }
+    pub fn get_l(&self) -> u8 {
+        self.L
+    }
+    pub fn get_sp(&self) -> u16 {
+        self.SP
+    }
+    pub fn get_pc(&self) -> u16 {
+        self.PC
+    }
+    pub fn get_ir(&self) -> u8 {
+        self.IR
+    }
+    pub fn get_hlt(&self) -> bool {
+        self.HLT
+    }
+
     pub fn reset(&mut self) {
-        self.A = 0; self.B = 0; self.C = 0; self.D = 0; self.E = 0; self.H = 0; self.L = 0; self.SP = 0; self.PC = 0; self.F = 0;
+        self.A = 0;
+        self.B = 0;
+        self.C = 0;
+        self.D = 0;
+        self.E = 0;
+        self.H = 0;
+        self.L = 0;
+        self.SP = 0;
+        self.PC = 0;
+        self.F = 0;
         self.IR = 0;
         self.HLT = false;
         self.cycles = 0;
     }
 }
 
-macro_rules!  mov_rd_rs {
+macro_rules! mov_rd_rs {
     ($fn_name: ident, $dest: ident, $source: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.$dest = self.$source;
             4
         }
     };
 }
 
-macro_rules!  mov_m_rs {
+macro_rules! mov_m_rs {
     ($fn_name: ident, $source: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.write_memory(self.get_addr_hl(), self.$source);
             7
         }
     };
 }
 
-macro_rules!  mov_rd_m {
+macro_rules! mov_rd_m {
     ($fn_name: ident, $dest: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.$dest = self.read_memory(self.get_addr_hl());
             7
         }
@@ -173,18 +209,18 @@ macro_rules!  mov_rd_m {
 
 macro_rules! inr_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             if self.$r < 0xff {
                 self.$r += 1;
             } else {
                 self.$r = 0x00;
             }
             let num = self.$r;
-            self.set_sign((num | 1<<7) != 0);
+            self.set_sign((num | 1 << 7) != 0);
             self.set_overflow(num == 0x00);
             self.set_zero(num == 0x00);
             if num != 0x00 {
-                self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
+                self.set_auxiliary_carry((((num - 1) & 0x0f) + 0x01) & 0x10 == 0x10);
             } else {
                 self.set_auxiliary_carry(true);
             }
@@ -196,18 +232,18 @@ macro_rules! inr_r {
 
 macro_rules! dcr_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             if self.$r > 0x00 {
                 self.$r -= 1;
             } else {
                 self.$r = 0xff;
             }
             let num = self.$r;
-            self.set_sign((num | 1<<7) != 0);
+            self.set_sign((num | 1 << 7) != 0);
             self.set_overflow(num == 0xff);
             self.set_zero(num == 0x00);
             if num != 0xff {
-                self.set_auxiliary_carry(((num+1) & 0x0f) < 1);
+                self.set_auxiliary_carry(((num + 1) & 0x0f) < 1);
             } else {
                 self.set_auxiliary_carry(true);
             }
@@ -219,47 +255,47 @@ macro_rules! dcr_r {
 
 macro_rules! add_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             let num = self.$r;
             self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
             self.set_carry(0xff - self.A < num);
             if 0xff - self.A > num {
-                self.A += num; 
+                self.A += num;
             } else {
                 self.A = num - (0xff - self.A + 0x01);
                 self.set_overflow(true);
             }
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! adc_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             let num = self.$r + (self.F & 1);
             self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
             self.set_carry(0xff - self.A < num);
             if 0xff - self.A > num {
-                self.A += num; 
+                self.A += num;
             } else {
                 self.A = num - (0xff - self.A + 0x01);
                 self.set_overflow(true);
             }
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! sub_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             let num = self.$r;
             self.set_auxiliary_carry((self.A & 0x0f) < (num & 0x0f));
             if self.A >= num {
@@ -269,17 +305,17 @@ macro_rules! sub_r {
                 self.set_carry(true);
                 self.set_overflow(true);
             }
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! sbb_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             let num = self.$r + (self.F & 1);
             self.set_auxiliary_carry((self.A & 0x0f) < (num & 0x0f));
             if self.A >= num {
@@ -289,53 +325,53 @@ macro_rules! sbb_r {
                 self.set_carry(true);
                 self.set_overflow(true);
             }
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! ana_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.A &= self.$r;
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! xra_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.A ^= self.$r;
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! ora_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.A |= self.$r;
-            self.set_sign((self.A | 1<<7) != 0);
+            self.set_sign((self.A | 1 << 7) != 0);
             self.set_zero(self.A == 0x00);
             self.set_parity(PP8085::find_parity(self.A));
             4
         }
-    }
+    };
 }
 
 macro_rules! cmp_r {
     ($fn_name: ident, $r: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             match self.$r.cmp(&self.A) {
                 std::cmp::Ordering::Equal => {
                     self.set_carry(false);
@@ -357,21 +393,21 @@ macro_rules! cmp_r {
 
 macro_rules! rst_seq {
     ($fn_name: ident, $i: expr) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             self.SP -= 1;
             self.write_memory(self.SP, (self.PC >> 8) as u8);
             self.SP -= 1;
             self.write_memory(self.SP, (self.PC & 0x0f) as u8);
             self.PC = $i as u16;
-            12 
+            12
         }
     };
 }
 
 macro_rules! call_seq {
     ($fn_name: ident) => {
-        fn $fn_name (&mut self) -> u8 {
-            let (opl, oph) = self.read_16bits(); 
+        fn $fn_name(&mut self) -> u8 {
+            let (opl, oph) = self.read_16bits();
             self.SP -= 1;
             self.write_memory(self.SP, (self.PC >> 8) as u8);
             self.SP -= 1;
@@ -382,8 +418,8 @@ macro_rules! call_seq {
     };
 
     ($fn_name1: ident, $fn_name2: ident, $cond: ident) => {
-        fn $fn_name1 (&mut self) -> u8 {
-            let (opl, oph) = self.read_16bits(); 
+        fn $fn_name1(&mut self) -> u8 {
+            let (opl, oph) = self.read_16bits();
             if self.$cond() {
                 self.SP -= 1;
                 self.write_memory(self.SP, (self.PC >> 8) as u8);
@@ -395,8 +431,8 @@ macro_rules! call_seq {
             9
         }
 
-        fn $fn_name2 (&mut self) -> u8 {
-            let (opl, oph) = self.read_16bits(); 
+        fn $fn_name2(&mut self) -> u8 {
+            let (opl, oph) = self.read_16bits();
             if !self.$cond() {
                 self.SP -= 1;
                 self.write_memory(self.SP, (self.PC >> 8) as u8);
@@ -412,7 +448,7 @@ macro_rules! call_seq {
 
 macro_rules! ret_seq {
     ($fn_name: ident) => {
-        fn $fn_name (&mut self) -> u8 {
+        fn $fn_name(&mut self) -> u8 {
             let l = self.read_memory(self.SP);
             self.SP += 1;
             let h = self.read_memory(self.SP);
@@ -423,7 +459,7 @@ macro_rules! ret_seq {
     };
 
     ($fn_name1: ident, $fn_name2: ident, $cond: ident) => {
-        fn $fn_name1 (&mut self) -> u8 {
+        fn $fn_name1(&mut self) -> u8 {
             if self.$cond() {
                 let l = self.read_memory(self.SP);
                 self.SP += 1;
@@ -435,7 +471,7 @@ macro_rules! ret_seq {
             6
         }
 
-        fn $fn_name2 (&mut self) -> u8 {
+        fn $fn_name2(&mut self) -> u8 {
             if !self.$cond() {
                 let l = self.read_memory(self.SP);
                 self.SP += 1;
@@ -451,42 +487,42 @@ macro_rules! ret_seq {
 
 macro_rules! dad_p {
     ($fn_name: ident,$a: ident, $b: ident) => {
-       fn $fn_name(&mut self) -> u8 {
-           let mut hl = self.get_addr_hl();
-           let ab = ((self.$a as u16) << 8) | (self.$b as u16);
-           if 0xffff - hl > ab {
-               hl += ab;
-               self.set_carry(false);
-               self.set_overflow(false);
-           } else {
-               hl = ab - (0xffff - hl + 0x0001);
-               self.set_carry(true);
-               self.set_overflow(true);
-           }
-           self.H = (hl >> 8) as u8;
-           self.L = (hl & 0x0f) as u8;
-           10
-       } 
+        fn $fn_name(&mut self) -> u8 {
+            let mut hl = self.get_addr_hl();
+            let ab = ((self.$a as u16) << 8) | (self.$b as u16);
+            if 0xffff - hl > ab {
+                hl += ab;
+                self.set_carry(false);
+                self.set_overflow(false);
+            } else {
+                hl = ab - (0xffff - hl + 0x0001);
+                self.set_carry(true);
+                self.set_overflow(true);
+            }
+            self.H = (hl >> 8) as u8;
+            self.L = (hl & 0x0f) as u8;
+            10
+        }
     };
 
     ($fn_name: ident) => {
-       fn $fn_name(&mut self) -> u8 {
-           let mut hl = self.get_addr_hl();
-           let ab = self.SP;
-           if 0xffff - hl > ab {
-               hl += ab;
-               self.set_carry(false);
-               self.set_overflow(false);
-           } else {
-               hl = ab - (0xffff - hl + 0x0001);
-               self.set_carry(true);
-               self.set_overflow(true);
-           }
-           self.H = (hl >> 8) as u8;
-           self.L = (hl & 0x0f) as u8;
-           10
-       } 
-    }
+        fn $fn_name(&mut self) -> u8 {
+            let mut hl = self.get_addr_hl();
+            let ab = self.SP;
+            if 0xffff - hl > ab {
+                hl += ab;
+                self.set_carry(false);
+                self.set_overflow(false);
+            } else {
+                hl = ab - (0xffff - hl + 0x0001);
+                self.set_carry(true);
+                self.set_overflow(true);
+            }
+            self.H = (hl >> 8) as u8;
+            self.L = (hl & 0x0f) as u8;
+            10
+        }
+    };
 }
 
 impl PP8085 {
@@ -749,7 +785,9 @@ impl PP8085 {
             0xFC => self.cm(),
             0xFE => self.cpi(),
             0xFF => self.rst_7(),
-            _ => {panic!("{:#02x} is unimplemented", self.IR)}
+            _ => {
+                panic!("{:#02x} is unimplemented", self.IR)
+            }
         }
     }
 
@@ -770,7 +808,7 @@ impl PP8085 {
         y = y ^ (y >> 8);
         y = y ^ (y >> 16);
 
-        if y & 1 != 0{
+        if y & 1 != 0 {
             return false;
         }
         true
@@ -781,83 +819,83 @@ impl PP8085 {
     // S  Z (K) A  0  P (V) C
     fn set_sign(&mut self, b: bool) {
         if b {
-            self.F |= 1<<7;
+            self.F |= 1 << 7;
         } else {
-            self.F &= !(1<<7);
+            self.F &= !(1 << 7);
         }
     }
 
     fn get_sign(&self) -> bool {
-        return (self.F & 1<<7) != 0x0
+        return (self.F & 1 << 7) != 0x0;
     }
 
     fn set_zero(&mut self, b: bool) {
         if b {
-            self.F |= 1<<6;
+            self.F |= 1 << 6;
         } else {
-            self.F &= !(1<<6);
+            self.F &= !(1 << 6);
         }
     }
 
     fn get_zero(&self) -> bool {
-        return (self.F & 1<<6) != 0x0
+        return (self.F & 1 << 6) != 0x0;
     }
 
     fn set_overflow(&mut self, b: bool) {
         if b {
-            self.F |= 1<<5;
-            self.F |= 1<<1;
+            self.F |= 1 << 5;
+            self.F |= 1 << 1;
         } else {
-            self.F &= !(1<<5);
-            self.F &= !(1<<1);
+            self.F &= !(1 << 5);
+            self.F &= !(1 << 1);
         }
     }
 
     fn get_overflow(&self) -> bool {
-        return (self.F & 1<<5) != 0x0
+        return (self.F & 1 << 5) != 0x0;
     }
 
     fn set_auxiliary_carry(&mut self, b: bool) {
         if b {
-            self.F |= 1<<4;
+            self.F |= 1 << 4;
         } else {
-            self.F &= !(1<<4);
+            self.F &= !(1 << 4);
         }
     }
 
     fn get_auxiliary_carry(&self) -> bool {
-        return (self.F & 1<<4) != 0x0
+        return (self.F & 1 << 4) != 0x0;
     }
 
     fn set_parity(&mut self, b: bool) {
         if b {
-            self.F |= 1<<2;
+            self.F |= 1 << 2;
         } else {
-            self.F &= !(1<<2);
+            self.F &= !(1 << 2);
         }
     }
 
     fn get_parity(&self) -> bool {
-        return (self.F & 1<<2) != 0x0
+        return (self.F & 1 << 2) != 0x0;
     }
 
     fn set_carry(&mut self, b: bool) {
         if b {
-            self.F |= 1<<0;
+            self.F |= 1 << 0;
         } else {
-            self.F &= !(1<<0);
+            self.F &= !(1 << 0);
         }
     }
 
     fn get_carry(&self) -> bool {
-        return (self.F & 1<<0) != 0x0
+        return (self.F & 1 << 0) != 0x0;
     }
 
     /// return the address stored in HL register pair as a u16.
     fn get_addr_hl(&self) -> u16 {
         (self.H as u16) << 8 | self.L as u16
     }
-    
+
     /// return the address stored in BC register pair as a u16.
     fn get_addr_bc(&self) -> u16 {
         (self.B as u16) << 8 | self.C as u16
@@ -868,13 +906,13 @@ impl PP8085 {
         (self.D as u16) << 8 | self.E as u16
     }
 
-    fn read_8bits(&mut self) ->  u8 {
+    fn read_8bits(&mut self) -> u8 {
         let r = self.read_memory(self.PC);
         self.PC += 1;
         r
     }
 
-    fn read_16bits(&mut self) ->  (u8, u8) {
+    fn read_16bits(&mut self) -> (u8, u8) {
         let l = self.read_memory(self.PC);
         self.PC += 1;
         let h = self.read_memory(self.PC);
@@ -1060,7 +1098,7 @@ impl PP8085 {
         3
     }
 
-    /// LXI SP 
+    /// LXI SP
     fn lxi_sp(&mut self) -> u8 {
         let (opl, oph) = self.read_16bits();
         self.SP = (oph as u16) << 8 | opl as u16;
@@ -1087,7 +1125,7 @@ impl PP8085 {
         self.A = self.read_memory(self.get_addr_bc());
         7
     }
-    
+
     /// LDAX D
     /// load A indirect
     fn ldax_d(&mut self) -> u8 {
@@ -1100,15 +1138,15 @@ impl PP8085 {
     fn sta(&mut self) -> u8 {
         let (opl, oph) = self.read_16bits();
         self.write_memory((oph as u16) << 8 | opl as u16, self.A);
-        13 
+        13
     }
-    
+
     /// LDA XXXX
     /// load A direct
     fn lda(&mut self) -> u8 {
         let (opl, oph) = self.read_16bits();
         self.A = self.read_memory((oph as u16) << 8 | opl as u16);
-        13 
+        13
     }
 
     /// SHLD XXXX
@@ -1117,18 +1155,18 @@ impl PP8085 {
         let (opl, oph) = self.read_16bits();
         let addr = (oph as u16) << 8 | opl as u16;
         self.write_memory(addr, self.H);
-        self.write_memory(addr+1, self.L);
-        16 
+        self.write_memory(addr + 1, self.L);
+        16
     }
-    
+
     /// LHLD XXXX
     /// load HL direct
     fn lhld(&mut self) -> u8 {
         let (opl, oph) = self.read_16bits();
         let addr = (oph as u16) << 8 | opl as u16;
         self.L = self.read_memory(addr);
-        self.H = self.read_memory(addr+1);
-        16 
+        self.H = self.read_memory(addr + 1);
+        16
     }
 
     /// XCHG
@@ -1146,9 +1184,9 @@ impl PP8085 {
         self.write_memory(self.SP, self.B);
         self.SP -= 1;
         self.write_memory(self.SP, self.C);
-        12 
+        12
     }
-    
+
     /// PUSH D
     /// push DE on stack
     fn push_d(&mut self) -> u8 {
@@ -1169,7 +1207,7 @@ impl PP8085 {
         12
     }
 
-    /// PUSH PSW 
+    /// PUSH PSW
     /// push A and F on stack
     fn push_psw(&mut self) -> u8 {
         self.SP -= 1;
@@ -1223,10 +1261,10 @@ impl PP8085 {
     /// exchange stack with HL
     fn xthl(&mut self) -> u8 {
         let top = self.read_memory(self.SP);
-        let bottom = self.read_memory(self.SP+1);
+        let bottom = self.read_memory(self.SP + 1);
 
         self.write_memory(self.SP, self.L);
-        self.write_memory(self.SP+1, self.H);
+        self.write_memory(self.SP + 1, self.H);
 
         self.L = top;
         self.H = bottom;
@@ -1246,7 +1284,7 @@ impl PP8085 {
         if self.SP < 0xffff {
             self.SP += 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.SP = 0x0000;
         }
         6
@@ -1259,7 +1297,7 @@ impl PP8085 {
         if t < 0xffff {
             t += 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.B = 0x00;
             self.C = 0x00;
             return 6;
@@ -1276,7 +1314,7 @@ impl PP8085 {
         if t < 0xffff {
             t += 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.D = 0x00;
             self.E = 0x00;
             return 6;
@@ -1293,7 +1331,7 @@ impl PP8085 {
         if t < 0xffff {
             t += 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.H = 0x00;
             self.L = 0x00;
             return 6;
@@ -1309,7 +1347,7 @@ impl PP8085 {
         if self.SP > 0x0000 {
             self.SP -= 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.SP = 0xffff;
         }
         6
@@ -1322,7 +1360,7 @@ impl PP8085 {
         if t > 0 {
             t -= 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.B = 0xff;
             self.C = 0xff;
             return 6;
@@ -1339,7 +1377,7 @@ impl PP8085 {
         if t > 0 {
             t -= 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.D = 0xff;
             self.E = 0xff;
             return 6;
@@ -1356,7 +1394,7 @@ impl PP8085 {
         if t > 0 {
             t -= 1;
         } else {
-            self.F = self.F | 1<<5;
+            self.F = self.F | 1 << 5;
             self.H = 0xff;
             self.L = 0xff;
             return 6;
@@ -1385,11 +1423,11 @@ impl PP8085 {
             num = 0x00;
             self.write_memory(self.get_addr_hl(), num);
         }
-        self.set_sign((num | 1<<7) != 0);
+        self.set_sign((num | 1 << 7) != 0);
         self.set_overflow(num == 0x00);
         self.set_zero(num == 0x00);
         if num != 0x00 {
-            self.set_auxiliary_carry((((num-1) & 0x0f) + 0x01) & 0x10 == 0x10);
+            self.set_auxiliary_carry((((num - 1) & 0x0f) + 0x01) & 0x10 == 0x10);
         } else {
             self.set_auxiliary_carry(true);
         }
@@ -1416,11 +1454,11 @@ impl PP8085 {
             num = 0xff;
             self.write_memory(self.get_addr_hl(), num);
         }
-        self.set_sign((num | 1<<7) != 0);
+        self.set_sign((num | 1 << 7) != 0);
         self.set_overflow(num == 0xff);
         self.set_zero(num == 0x00);
         if num != 0xff {
-            self.set_auxiliary_carry((((num+1) & 0x0f) - 0x01) & 0x10 == 0x10);
+            self.set_auxiliary_carry((((num + 1) & 0x0f) - 0x01) & 0x10 == 0x10);
         } else {
             self.set_auxiliary_carry(true);
         }
@@ -1450,12 +1488,12 @@ impl PP8085 {
         self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
         self.set_carry(0xff - self.A < num);
         if 0xff - self.A > num {
-            self.A += num; 
+            self.A += num;
         } else {
             self.A = num - (0xff - self.A + 0x01);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1467,12 +1505,12 @@ impl PP8085 {
         self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
         self.set_carry(0xff - self.A < num);
         if 0xff - self.A > num {
-            self.A += num; 
+            self.A += num;
         } else {
             self.A = num - (0xff - self.A + 0x01);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1484,12 +1522,12 @@ impl PP8085 {
         self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
         self.set_carry(0xff - self.A < num);
         if 0xff - self.A > num {
-            self.A += num; 
+            self.A += num;
         } else {
             self.A = num - (0xff - self.A + 0x01);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1501,12 +1539,12 @@ impl PP8085 {
         self.set_auxiliary_carry(((self.A & 0x0f) + (num & 0x0f)) & 0x10 == 0x10);
         self.set_carry(0xff - self.A < num);
         if 0xff - self.A > num {
-            self.A += num; 
+            self.A += num;
         } else {
             self.A = num - (0xff - self.A + 0x01);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1544,7 +1582,7 @@ impl PP8085 {
             self.set_carry(true);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1561,7 +1599,7 @@ impl PP8085 {
             self.set_carry(true);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1578,7 +1616,7 @@ impl PP8085 {
             self.set_carry(true);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1595,7 +1633,7 @@ impl PP8085 {
             self.set_carry(true);
             self.set_overflow(true);
         }
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1610,16 +1648,16 @@ impl PP8085 {
     ana_r!(ana_l, L);
 
     fn ana_m(&mut self) -> u8 {
-        self.A &= self.read_memory(self.get_addr_hl()); 
-        self.set_sign((self.A | 1<<7) != 0);
+        self.A &= self.read_memory(self.get_addr_hl());
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
     }
 
     fn ani(&mut self) -> u8 {
-        self.A &= self.read_8bits(); 
-        self.set_sign((self.A | 1<<7) != 0);
+        self.A &= self.read_8bits();
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1634,8 +1672,8 @@ impl PP8085 {
     xra_r!(xra_l, L);
 
     fn xra_m(&mut self) -> u8 {
-        self.A ^= self.read_memory(self.get_addr_hl()); 
-        self.set_sign((self.A | 1<<7) != 0);
+        self.A ^= self.read_memory(self.get_addr_hl());
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1643,7 +1681,7 @@ impl PP8085 {
 
     fn xri(&mut self) -> u8 {
         self.A ^= self.read_8bits();
-        self.set_sign((self.A | 1<<7) != 0);
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1658,16 +1696,16 @@ impl PP8085 {
     ora_r!(ora_l, L);
 
     fn ora_m(&mut self) -> u8 {
-        self.A |= self.read_memory(self.get_addr_hl()); 
-        self.set_sign((self.A | 1<<7) != 0);
+        self.A |= self.read_memory(self.get_addr_hl());
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
     }
 
     fn ori(&mut self) -> u8 {
-        self.A |= self.read_8bits(); 
-        self.set_sign((self.A | 1<<7) != 0);
+        self.A |= self.read_8bits();
+        self.set_sign((self.A | 1 << 7) != 0);
         self.set_zero(self.A == 0x00);
         self.set_parity(PP8085::find_parity(self.A));
         7
@@ -1835,7 +1873,7 @@ impl PP8085 {
         let mut num: u8 = self.A;
         if num & 0x0f > 0x09 || self.get_auxiliary_carry() {
             num += 0x06;
-        } 
+        }
         if num & 0xf0 > 0x90 || self.get_carry() {
             num += 0x60;
         }
@@ -1845,7 +1883,7 @@ impl PP8085 {
 
     /// RLC
     fn rlc(&mut self) -> u8 {
-        self.set_carry(self.A & (1<<7) != 0);
+        self.set_carry(self.A & (1 << 7) != 0);
         self.A = (self.A << 1) | ((self.A & (1 << 7)) >> 7);
         4
     }
@@ -1859,7 +1897,7 @@ impl PP8085 {
 
     /// RAL
     fn ral(&mut self) -> u8 {
-        let n  = (self.A & (1<<7)) >> 7;
+        let n = (self.A & (1 << 7)) >> 7;
         self.A = (self.A << 1) | self.get_carry() as u8;
         self.set_carry(n == 1);
         4
@@ -1867,7 +1905,7 @@ impl PP8085 {
 
     /// RAR
     fn rar(&mut self) -> u8 {
-        let n  = self.A & 1;
+        let n = self.A & 1;
         self.A = (self.A >> 1) | (self.get_carry() as u8) << 7;
         self.set_carry(n == 1);
         4
@@ -1901,7 +1939,7 @@ impl PP8085 {
         10
     }
 
-    // OUT 
+    // OUT
     fn out(&mut self) -> u8 {
         let addr = self.read_8bits();
         self.write_io(addr, self.A);
@@ -1934,7 +1972,7 @@ mod tests {
     fn test_add_r() {
         let mut x = 0x11;
         let mut y = 0x11;
-        let mut res = x+y;
+        let mut res = x + y;
         let mut cpu = PP8085::new();
         cpu.A = x;
         cpu.B = y;
@@ -1986,7 +2024,7 @@ mod tests {
     fn test_adc_r() {
         let x = 0x11;
         let y = 0x11;
-        let res = x+y+1;
+        let res = x + y + 1;
         let mut cpu = PP8085::new();
         cpu.set_carry(true);
         cpu.A = x;
@@ -2000,7 +2038,7 @@ mod tests {
 
         let x = 0x11;
         let y = 0x11;
-        let res = x+y;
+        let res = x + y;
         let mut cpu = PP8085::new();
         cpu.A = x;
         cpu.C = y;
@@ -2030,7 +2068,7 @@ mod tests {
     fn test_sub_r() {
         let x = 0x11;
         let y = 0x11;
-        let res = x-y;
+        let res = x - y;
         let mut cpu = PP8085::new();
         cpu.A = x;
         cpu.B = y;
@@ -2190,7 +2228,6 @@ mod tests {
         assert!(cpu.get_carry());
     }
 
-
     #[test]
     fn test_rst() {
         let mut cpu = PP8085::new();
@@ -2200,7 +2237,7 @@ mod tests {
         assert_eq!(c, 12);
         assert_eq!(cpu.PC, 0x0008);
         assert_eq!(cpu.read_memory(cpu.SP), 0x02);
-        assert_eq!(cpu.read_memory(cpu.SP+1), 0x01);
+        assert_eq!(cpu.read_memory(cpu.SP + 1), 0x01);
     }
 
     #[test]
@@ -2215,7 +2252,7 @@ mod tests {
         assert_eq!(c, 18);
         assert_eq!(cpu.PC, 0xaa22);
         assert_eq!(cpu.read_memory(cpu.SP), 0x02);
-        assert_eq!(cpu.read_memory(cpu.SP+1), 0x00);
+        assert_eq!(cpu.read_memory(cpu.SP + 1), 0x00);
 
         cpu.set_carry(false);
         cpu.SP = 0x19ff;
@@ -2237,7 +2274,7 @@ mod tests {
         assert_eq!(c, 18);
         assert_eq!(cpu.PC, 0xaa22);
         assert_eq!(cpu.read_memory(cpu.SP), 0x02);
-        assert_eq!(cpu.read_memory(cpu.SP+1), 0x00);
+        assert_eq!(cpu.read_memory(cpu.SP + 1), 0x00);
 
         cpu.set_carry(true);
         cpu.SP = 0x19ff;
@@ -2254,7 +2291,7 @@ mod tests {
         cpu.SP = 0x19fd;
         cpu.PC = 0x0000;
         cpu.write_memory(cpu.SP, 0x02);
-        cpu.write_memory(cpu.SP+1, 0xaa);
+        cpu.write_memory(cpu.SP + 1, 0xaa);
         let c = cpu.rc();
         assert_eq!(c, 12);
         assert_eq!(cpu.PC, 0xaa02);
@@ -2273,10 +2310,10 @@ mod tests {
     fn test_cond_ret_fn2() {
         let mut cpu = PP8085::new();
         cpu.set_carry(false);
-        cpu.SP = 0x2000-2;
+        cpu.SP = 0x2000 - 2;
         cpu.PC = 0x0000;
         cpu.write_memory(cpu.SP, 0x02);
-        cpu.write_memory(cpu.SP+1, 0x12);
+        cpu.write_memory(cpu.SP + 1, 0x12);
         let c = cpu.rnc();
         assert_eq!(c, 12);
         assert_eq!(cpu.PC, 0x1202);
@@ -2381,7 +2418,7 @@ mod tests {
         rom.write(0x0003, 0x32);
         rom.write(0x0004, 0x92); // sub d
         rom.write(0x0005, 0xd3); // out
-        rom.write(0x0006, 0xdf); 
+        rom.write(0x0006, 0xdf);
         rom.write(0x0007, 0x76); // hlt
         cpu.load_memory(rom);
         cpu.add_io_port(0xdf);

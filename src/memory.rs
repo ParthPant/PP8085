@@ -1,5 +1,5 @@
-use wasm_bindgen::prelude::*;
 use js_sys::Uint8Array;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct Memory {
@@ -15,7 +15,7 @@ impl Memory {
             size: size,
         }
     }
-    
+
     pub fn size(&self) -> u16 {
         self.size
     }
@@ -34,8 +34,7 @@ impl Memory {
     pub fn read(&self, addr: u16) -> u8 {
         if addr < self.size {
             return self.data[addr as usize];
-        } 
-        else {
+        } else {
             // panic!("Memory overflow");
             return 0;
         }
@@ -52,14 +51,14 @@ impl Memory {
     pub fn new_from_js(bin: &JsValue, size: usize) -> Memory {
         let buffer = Uint8Array::new(bin);
         let bin = buffer.to_vec();
-        assert!(bin.len() < size);            
+        assert!(bin.len() < size);
         let mut res = Memory {
             data: vec![0; size as usize],
             size: size as u16,
         };
         for i in 0..bin.len() {
-             res.data[i] = bin[i];
-        };
+            res.data[i] = bin[i];
+        }
         res
     }
 }
@@ -70,14 +69,14 @@ impl Memory {
     }
 
     pub fn new_from(bin: &Vec<u8>, size: usize) -> Memory {
-        assert!(bin.len() < size);            
+        assert!(bin.len() < size);
         let mut res = Memory {
             data: vec![0; size as usize],
             size: size as u16,
         };
         for i in 0..bin.len() {
-             res.data[i] = bin[i];
-        };
+            res.data[i] = bin[i];
+        }
         res
     }
 }
