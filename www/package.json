@@ -2,7 +2,7 @@
   "name": "www",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://parthpant.github.io/PP8085",
+  "homepage": "https://parthpant.github.io/pp8085",
   "dependencies": {
     "@emotion/react": "^11.4.1",
     "@emotion/styled": "^11.3.0",

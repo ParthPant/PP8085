@@ -1,5 +1,5 @@
 import {Paper, Typography, Button, Box} from "@mui/material"
-import { DataGrid, GridColDef, GridCellEditCommitParams, MuiEvent, GridCallbackDetails} from '@mui/x-data-grid';
+import { DataGrid, GridColDef, GridCellEditCommitParams, MuiEvent, GridCallbackDetails, MuiBaseEvent} from '@mui/x-data-grid';
 import React, { useState } from "react";
 
 import PortDialog from './portdialog'
@@ -25,7 +25,7 @@ function IoPorts (props: {ports: any, handleEdit: (addr: number, data:number) =>
     const columns: GridColDef[] = [{ field: 'addr', headerName: 'Address', width: 180, editable: false },
     { field: 'data', headerName: 'Data', width: 180, editable: true}];
 
-    const handleChange = (params: GridCellEditCommitParams, _event: MuiEvent<React.SyntheticEvent<Element, Event>>, _details: GridCallbackDetails) => {
+    const handleChange = (params: GridCellEditCommitParams, _event: MuiEvent<MuiBaseEvent>, _details: GridCallbackDetails) => {
       handleEdit(params.id as number, params.value as number);
     }
 
